@@ -22,6 +22,12 @@ const routes = [
     component: () => import('@/views/Register.vue')
   },
   {
+    path: '/write',
+    name: 'WriteArticle',
+    component: () => import('@/views/WriteArticle.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/admin/AdminLayout.vue'),

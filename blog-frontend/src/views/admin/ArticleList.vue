@@ -92,7 +92,7 @@ onMounted(() => {
       <el-table-column prop="categoryName" label="分类" width="120" />
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
-          <el-tag :type="getStatusType(row.status">{{ getStatusText(row.status) }}</el-tag>
+          <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="viewCount" label="浏览" width="80" />
