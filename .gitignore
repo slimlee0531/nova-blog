@@ -130,3 +130,4 @@ docker-compose.override.yml
 blog-backend/blog-backend.log
 blog-backend/*.log
 blog-frontend/dist/
+blog-backend/src/main/resources/application.yml
