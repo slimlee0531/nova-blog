@@ -68,21 +68,22 @@ onMounted(() => {
 
 <style scoped>
 .dashboard h2 {
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text);
 }
 
 .stat-value {
-  font-size: 32px;
-  font-weight: bold;
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
   text-align: center;
-  color: #409eff;
+  color: var(--color-primary);
 }
 
 .stat-value.published {
-  color: #67c23a;
+  color: var(--color-success);
 }
 
 .stat-value.draft {
-  color: #909399;
+  color: var(--color-text-muted);
 }
 </style>

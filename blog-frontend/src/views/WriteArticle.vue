@@ -139,38 +139,41 @@ onMounted(() => {
 .write-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
-  min-height: calc(100vh - 60px);
-  background: white;
+  padding: var(--spacing-lg);
+  min-height: calc(100vh - var(--header-height));
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
 }
 
 .write-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-divider);
 }
 
 .write-header h2 {
   margin: 0;
+  color: var(--color-text);
 }
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--spacing-sm);
 }
 
 .write-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--spacing-lg);
 }
 
 .title-input :deep(.el-input__inner) {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
   border: none;
   padding: 10px 0;
 }
@@ -181,30 +184,30 @@ onMounted(() => {
 
 .form-row {
   display: flex;
-  gap: 15px;
+  gap: var(--spacing-md);
 }
 
 .content-input :deep(.el-textarea__inner) {
-  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-  line-height: 1.8;
-  padding: 20px;
+  font-family: var(--font-mono);
+  line-height: var(--leading-relaxed);
+  padding: var(--spacing-lg);
 }
 
 .tips-list {
   margin: 0;
-  padding-left: 20px;
-  color: #666;
+  padding-left: var(--spacing-lg);
+  color: var(--color-text-muted);
 }
 
 .tips-list li {
-  margin: 5px 0;
+  margin: var(--spacing-xs) 0;
 }
 
 /* 响应式 */
 @media (max-width: 768px) {
   .write-header {
     flex-direction: column;
-    gap: 15px;
+    gap: var(--spacing-md);
     align-items: flex-start;
   }
 

@@ -1,0 +1,40 @@
+/**
+ * NovaBlog Dark Mode
+ * 通过 [data-theme="dark"] 切换
+ */
+
+[data-theme="dark"] {
+  /* ==================== 中性色 ==================== */
+  --color-text: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+
+  --color-bg: #0f172a;
+  --color-bg-card: #1e293b;
+  --color-bg-subtle: #334155;
+  --color-bg-hover: #1e293b;
+
+  --color-border: #334155;
+  --color-border-light: #1e293b;
+  --color-divider: #334155;
+
+  /* 主色调整 */
+  --color-primary-bg: rgba(102, 126, 234, 0.15);
+
+  /* 阴影调整 */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* ==================== 暗黑模式过渡 ==================== */
+body,
+.card,
+.sidebar-widget {
+  transition:
+    background-color var(--transition-slow),
+    border-color var(--transition-slow),
+    color var(--transition-slow);
+}

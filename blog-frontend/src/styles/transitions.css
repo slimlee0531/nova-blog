@@ -1,0 +1,87 @@
+/**
+ * NovaBlog Transitions
+ * 统一过渡动画
+ */
+
+/* ==================== 淡入淡出 ==================== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-base);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* ==================== 滑入 ==================== */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all var(--transition-base);
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* ==================== 滑入左侧 ==================== */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all var(--transition-base);
+}
+
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+/* ==================== 列表动画 ==================== */
+.list-enter-active,
+.list-leave-active {
+  transition: all var(--transition-base);
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.list-move {
+  transition: transform var(--transition-slow);
+}
+
+/* ==================== 评论动画 ==================== */
+.comment-enter-active,
+.comment-leave-active {
+  transition: all var(--transition-base);
+}
+
+.comment-enter-from,
+.comment-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* ==================== 缩放 ==================== */
+.scale-enter-active,
+.scale-leave-active {
+  transition: all var(--transition-base);
+}
+
+.scale-enter-from,
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
