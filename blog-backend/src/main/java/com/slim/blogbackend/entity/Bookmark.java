@@ -1,58 +1,32 @@
 package com.slim.blogbackend.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 /**
  * 收藏实体类
- * 对应数据库 bookmarks 表
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "bookmarks")
+@TableName("bookmarks")
 public class Bookmark {
 
-    /**
-     * 收藏ID
-     */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 用户
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private Long userId;
 
-    /**
-     * 文章
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "article_id", nullable = false)
-    private Article article;
+    private Long articleId;
 
-    /**
-     * 收藏备注
-     */
-    @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
-    /**
-     * 创建时间
-     */
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 }
