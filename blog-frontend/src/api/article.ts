@@ -6,7 +6,7 @@ export const articleApi = {
     return request.get('/api/articles', { params })
   },
   getArticleBySlug(slug: string) {
-    return request.get(`/api/articles/${slug}`)
+    return request.get(`/api/articles/detail/${slug}`)
   },
   getArticleById(id: number) {
     return request.get(`/api/articles/${id}`)

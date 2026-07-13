@@ -23,14 +23,9 @@ public class ArticleApiController {
         return articleService.getArticleList(page, size, "PUBLISHED");
     }
 
-    @GetMapping("/{slug}")
+    @GetMapping("/detail/{slug}")
     public Result<ArticleResponseDTO> getArticleBySlug(@PathVariable String slug) {
         return articleService.getArticleBySlug(slug);
-    }
-
-    @GetMapping("/{id}")
-    public Result<ArticleResponseDTO> getArticleById(@PathVariable Long id) {
-        return articleService.getArticleById(id);
     }
 
     @GetMapping("/category/{categorySlug}")
