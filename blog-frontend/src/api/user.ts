@@ -1,16 +1,17 @@
 import request from './request'
+import type { User, LoginParams, RegisterParams, LoginResult, Result } from '@/types'
 
 export const userApi = {
-  register(data: any) {
-    return request.post('/api/user/register', data)
+  register(data: RegisterParams) {
+    return request.post('/api/user/register', data) as Promise<Result<LoginResult>>
   },
-  login(data: any) {
-    return request.post('/api/user/login', data)
+  login(data: LoginParams) {
+    return request.post('/api/user/login', data) as Promise<Result<LoginResult>>
   },
   getInfo() {
-    return request.get('/api/user/info')
+    return request.get('/api/user/info') as Promise<Result<User>>
   },
-  getUserList(params: any) {
-    return request.get('/api/user/list', { params })
+  getUserList(params: { page: number; size: number }) {
+    return request.get('/api/user/list', { params }) as Promise<Result<User[]>>
   }
 }

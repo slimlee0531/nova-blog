@@ -6,11 +6,13 @@ import com.slim.blogbackend.dto.request.ArticleCreateDTO;
 import com.slim.blogbackend.dto.request.ArticleUpdateDTO;
 import com.slim.blogbackend.dto.response.ArticleResponseDTO;
 import com.slim.blogbackend.entity.Article;
+import com.slim.blogbackend.entity.ArticleTag;
 import com.slim.blogbackend.entity.Category;
 import com.slim.blogbackend.entity.Tag;
 import com.slim.blogbackend.entity.User;
 import com.slim.blogbackend.exception.BusinessException;
 import com.slim.blogbackend.mapper.ArticleMapper;
+import com.slim.blogbackend.mapper.ArticleTagMapper;
 import com.slim.blogbackend.mapper.CategoryMapper;
 import com.slim.blogbackend.mapper.TagMapper;
 import com.slim.blogbackend.mapper.UserMapper;
@@ -40,6 +42,9 @@ public class ArticleService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private ArticleTagMapper articleTagMapper;
 
     @Transactional
     public Result<ArticleResponseDTO> createArticle(ArticleCreateDTO dto, Long authorId) {
@@ -71,6 +76,11 @@ public class ArticleService {
 
         articleMapper.insert(article);
 
+        // 处理标签关联
+        if (dto.getTags() != null && !dto.getTags().isEmpty()) {
+            saveArticleTags(article.getId(), dto.getTags());
+        }
+
         return Result.success(toResponseDTO(article));
     }
 
@@ -99,6 +109,14 @@ public class ArticleService {
 
         articleMapper.updateById(article);
 
+        // 更新标签关联
+        if (dto.getTags() != null) {
+            articleTagMapper.deleteByArticleId(id);
+            if (!dto.getTags().isEmpty()) {
+                saveArticleTags(id, dto.getTags());
+            }
+        }
+
         return Result.success(toResponseDTO(article));
     }
 
@@ -108,6 +126,8 @@ public class ArticleService {
         if (article == null) {
             throw new BusinessException("文章不存在");
         }
+        // 先删除标签关联
+        articleTagMapper.deleteByArticleId(id);
         articleMapper.deleteById(id);
         return Result.success();
     }
@@ -195,6 +215,36 @@ public class ArticleService {
         return Result.success(list);
     }
 
+    /**
+     * 保存文章标签关联
+     */
+    private void saveArticleTags(Long articleId, List<String> tagNames) {
+        for (String tagName : tagNames) {
+            // 查找或创建标签
+            LambdaQueryWrapper<Tag> tagWrapper = new LambdaQueryWrapper<>();
+            tagWrapper.eq(Tag::getName, tagName);
+            Tag tag = tagMapper.selectOne(tagWrapper);
+
+            if (tag == null) {
+                tag = Tag.builder()
+                        .name(tagName)
+                        .slug(tagName.toLowerCase().replaceAll("[^a-z0-9\\u4e00-\\u9fa5]+", "-"))
+                        .articleCount(0)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                tagMapper.insert(tag);
+            }
+
+            // 创建关联
+            ArticleTag articleTag = ArticleTag.builder()
+                    .articleId(articleId)
+                    .tagId(tag.getId())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            articleTagMapper.insert(articleTag);
+        }
+    }
+
     private String generateSlug(String title) {
         String slug = title.toLowerCase()
                 .replaceAll("[^a-z0-9\\u4e00-\\u9fa5\\s-]", "")
@@ -258,6 +308,23 @@ public class ArticleService {
             if (category != null) {
                 builder.categoryName(category.getName());
             }
+        }
+
+        // 查询标签
+        LambdaQueryWrapper<ArticleTag> atWrapper = new LambdaQueryWrapper<>();
+        atWrapper.eq(ArticleTag::getArticleId, article.getId());
+        List<ArticleTag> articleTags = articleTagMapper.selectList(atWrapper);
+        if (articleTags != null && !articleTags.isEmpty()) {
+            List<Long> tagIds = articleTags.stream()
+                    .map(ArticleTag::getTagId)
+                    .toList();
+            LambdaQueryWrapper<Tag> tagWrapper = new LambdaQueryWrapper<>();
+            tagWrapper.in(Tag::getId, tagIds);
+            List<Tag> tags = tagMapper.selectList(tagWrapper);
+            List<String> tagNames = tags.stream()
+                    .map(Tag::getName)
+                    .toList();
+            builder.tags(tagNames);
         }
 
         return builder.build();

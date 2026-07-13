@@ -2,8 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { categoryApi } from '@/api/category'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { Category } from '@/types'
 
-const categories = ref<any[]>([])
+const categories = ref<Category[]>([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const form = ref({
@@ -17,7 +18,7 @@ const editId = ref<number | null>(null)
 const fetchCategories = async () => {
   loading.value = true
   try {
-    const res: any = await categoryApi.getList()
+    const res = await categoryApi.getList()
     if (res.code === 200) {
       categories.value = res.data
     }
@@ -35,10 +36,10 @@ const handleCreate = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (category: any) => {
+const handleEdit = (category: Category) => {
   isEdit.value = true
   editId.value = category.id
-  form.value = { ...category }
+  form.value = { name: category.name, slug: category.slug, description: category.description || '' }
   dialogVisible.value = true
 }
 
@@ -47,7 +48,7 @@ const handleDelete = async (id: number) => {
     await ElMessageBox.confirm('确定要删除这个分类吗？', '提示', {
       type: 'warning'
     })
-    const res: any = await categoryApi.delete(id)
+    const res = await categoryApi.delete(id)
     if (res.code === 200) {
       ElMessage.success('删除成功')
       fetchCategories()
@@ -64,7 +65,7 @@ const handleSubmit = async () => {
   }
 
   try {
-    let res: any
+    let res
     if (isEdit.value && editId.value) {
       res = await categoryApi.update(editId.value, form.value)
     } else {

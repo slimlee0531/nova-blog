@@ -4,11 +4,12 @@ import { useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { tagApi } from '@/api/tag'
 import { useUserStore } from '@/store/user'
+import type { Article, Tag } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
-const articles = ref<any[]>([])
-const tags = ref<any[]>([])
+const articles = ref<Article[]>([])
+const tags = ref<Tag[]>([])
 const loading = ref(false)
 const total = ref(0)
 const page = ref(1)
@@ -17,7 +18,7 @@ const pageSize = ref(10)
 const fetchArticles = async () => {
   loading.value = true
   try {
-    const res: any = await articleApi.getArticles({
+    const res = await articleApi.getArticles({
       page: page.value,
       size: pageSize.value
     })
@@ -34,7 +35,7 @@ const fetchArticles = async () => {
 
 const fetchTags = async () => {
   try {
-    const res: any = await tagApi.getTagList()
+    const res = await tagApi.getTagList()
     if (res.code === 200) {
       tags.value = res.data.slice(0, 20)
     }

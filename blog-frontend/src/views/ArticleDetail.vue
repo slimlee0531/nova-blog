@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { commentApi } from '@/api/comment'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
+import type { Article, Comment } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const article = ref<any>(null)
-const comments = ref<any[]>([])
+const article = ref<Article | null>(null)
+const comments = ref<Comment[]>([])
 const loading = ref(false)
 const commentContent = ref('')
 const submitting = ref(false)
@@ -36,7 +37,7 @@ const fetchArticle = async () => {
   loading.value = true
   try {
     const slug = route.params.slug as string
-    const res: any = await articleApi.getArticleBySlug(slug)
+    const res = await articleApi.getArticleBySlug(slug)
     if (res.code === 200) {
       article.value = res.data
       fetchComments()
@@ -55,7 +56,7 @@ const fetchArticle = async () => {
 const fetchComments = async () => {
   if (!article.value) return
   try {
-    const res: any = await commentApi.getCommentsByArticle(article.value.id)
+    const res = await commentApi.getCommentsByArticle(article.value.id)
     if (res.code === 200) {
       comments.value = res.data
     }
@@ -77,18 +78,21 @@ const submitComment = async () => {
 
   submitting.value = true
   try {
-    const res: any = await commentApi.createComment({
-      articleId: article.value.id,
+    const res = await commentApi.createComment({
+      articleId: article.value!.id,
       content: commentContent.value
     })
     if (res.code === 200) {
       ElMessage.success('评论成功，等待审核')
-      const newComment = {
+      const newComment: Comment = {
         id: res.data?.id || Date.now(),
         content: commentContent.value,
         authorName: userStore.userInfo?.displayName || userStore.userInfo?.username || '我',
+        articleId: article.value!.id,
+        status: 'PENDING',
+        likeCount: 0,
         createdAt: new Date().toISOString(),
-        status: 'pending'
+        updatedAt: new Date().toISOString()
       }
       comments.value.unshift(newComment)
       commentContent.value = ''
@@ -244,7 +248,7 @@ onMounted(() => {
                 <div class="comment-body">
                   {{ comment.content }}
                 </div>
-                <div class="comment-status" v-if="comment.status === 'pending'">
+                <div class="comment-status" v-if="comment.status === 'PENDING'">
                   <el-icon><Clock /></el-icon> 等待审核
                 </div>
               </div>

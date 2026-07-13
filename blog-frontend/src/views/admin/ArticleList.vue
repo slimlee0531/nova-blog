@@ -3,9 +3,10 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { Article } from '@/types'
 
 const router = useRouter()
-const articles = ref<any[]>([])
+const articles = ref<Article[]>([])
 const loading = ref(false)
 const total = ref(0)
 const page = ref(1)
@@ -14,7 +15,7 @@ const pageSize = ref(10)
 const fetchArticles = async () => {
   loading.value = true
   try {
-    const res: any = await articleApi.adminGetArticles({
+    const res = await articleApi.adminGetArticles({
       page: page.value,
       size: pageSize.value
     })
@@ -42,7 +43,7 @@ const handleDelete = async (id: number) => {
     await ElMessageBox.confirm('确定要删除这篇文章吗？', '提示', {
       type: 'warning'
     })
-    const res: any = await articleApi.adminDeleteArticle(id)
+    const res = await articleApi.adminDeleteArticle(id)
     if (res.code === 200) {
       ElMessage.success('删除成功')
       fetchArticles()
@@ -58,7 +59,7 @@ const handlePageChange = (newPage: number) => {
 }
 
 const getStatusType = (status: string) => {
-  const map: any = {
+  const map: Record<string, string> = {
     'PUBLISHED': 'success',
     'DRAFT': 'info',
     'ARCHIVED': 'warning'
@@ -67,7 +68,7 @@ const getStatusType = (status: string) => {
 }
 
 const getStatusText = (status: string) => {
-  const map: any = {
+  const map: Record<string, string> = {
     'PUBLISHED': '已发布',
     'DRAFT': '草稿',
     'ARCHIVED': '已归档'

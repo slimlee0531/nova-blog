@@ -2,8 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { tagApi } from '@/api/tag'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { Tag } from '@/types'
 
-const tags = ref<any[]>([])
+const tags = ref<Tag[]>([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const form = ref({
@@ -18,7 +19,7 @@ const editId = ref<number | null>(null)
 const fetchTags = async () => {
   loading.value = true
   try {
-    const res: any = await tagApi.getList()
+    const res = await tagApi.getList()
     if (res.code === 200) {
       tags.value = res.data
     }
@@ -36,10 +37,10 @@ const handleCreate = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (tag: any) => {
+const handleEdit = (tag: Tag) => {
   isEdit.value = true
   editId.value = tag.id
-  form.value = { ...tag }
+  form.value = { name: tag.name, slug: tag.slug, description: tag.description || '', color: tag.color || '' }
   dialogVisible.value = true
 }
 
@@ -48,7 +49,7 @@ const handleDelete = async (id: number) => {
     await ElMessageBox.confirm('确定要删除这个标签吗？', '提示', {
       type: 'warning'
     })
-    const res: any = await tagApi.delete(id)
+    const res = await tagApi.delete(id)
     if (res.code === 200) {
       ElMessage.success('删除成功')
       fetchTags()
@@ -65,7 +66,7 @@ const handleSubmit = async () => {
   }
 
   try {
-    let res: any
+    let res
     if (isEdit.value && editId.value) {
       res = await tagApi.update(editId.value, form.value)
     } else {

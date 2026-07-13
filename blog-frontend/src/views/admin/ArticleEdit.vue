@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { categoryApi } from '@/api/category'
 import { ElMessage } from 'element-plus'
+import type { Category, ArticleCreateParams } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,10 +12,10 @@ const isEdit = computed(() => !!route.params.id)
 const loading = ref(false)
 const saving = ref(false)
 
-const form = ref({
+const form = ref<ArticleCreateParams>({
   title: '',
   content: '',
-  categoryId: null,
+  categoryId: undefined,
   status: 'DRAFT',
   visibility: 'PUBLIC',
   summary: '',
@@ -22,11 +23,11 @@ const form = ref({
   metaDescription: ''
 })
 
-const categories = ref<any[]>([])
+const categories = ref<Category[]>([])
 
 const fetchCategories = async () => {
   try {
-    const res: any = await categoryApi.getList()
+    const res = await categoryApi.getList()
     if (res.code === 200) {
       categories.value = res.data
     }
@@ -40,9 +41,19 @@ const fetchArticle = async () => {
 
   loading.value = true
   try {
-    const res: any = await articleApi.adminGetArticle(Number(route.params.id))
+    const res = await articleApi.adminGetArticle(Number(route.params.id))
     if (res.code === 200) {
-      form.value = res.data
+      form.value = {
+        title: res.data.title,
+        content: res.data.content,
+        categoryId: res.data.categoryId,
+        status: res.data.status,
+        visibility: res.data.visibility,
+        summary: res.data.summary || '',
+        metaTitle: res.data.metaTitle || '',
+        metaDescription: res.data.metaDescription || '',
+        tags: res.data.tags
+      }
     }
   } catch (e) {
     console.error(e)
@@ -59,7 +70,7 @@ const handleSave = async () => {
 
   saving.value = true
   try {
-    let res: any
+    let res
     if (isEdit.value) {
       res = await articleApi.adminUpdateArticle(Number(route.params.id), form.value)
     } else {

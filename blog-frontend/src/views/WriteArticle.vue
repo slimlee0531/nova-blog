@@ -5,24 +5,25 @@ import { articleApi } from '@/api/article'
 import { categoryApi } from '@/api/category'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
+import type { Category, ArticleCreateParams } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
 const saving = ref(false)
 
-const form = ref({
+const form = ref<ArticleCreateParams>({
   title: '',
   content: '',
-  categoryId: null,
+  categoryId: undefined,
   status: 'DRAFT',
   summary: ''
 })
 
-const categories = ref<any[]>([])
+const categories = ref<Category[]>([])
 
 const fetchCategories = async () => {
   try {
-    const res: any = await categoryApi.getList()
+    const res = await categoryApi.getList()
     if (res.code === 200) {
       categories.value = res.data
     }
@@ -43,7 +44,7 @@ const handleSave = async (status: string) => {
 
   saving.value = true
   try {
-    const res: any = await articleApi.adminCreateArticle({
+    const res = await articleApi.adminCreateArticle({
       ...form.value,
       status
     })

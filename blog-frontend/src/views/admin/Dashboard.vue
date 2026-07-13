@@ -10,17 +10,17 @@ const stats = ref({
 
 const fetchStats = async () => {
   try {
-    const res: any = await articleApi.adminGetArticles({ page: 1, size: 1 })
+    const res = await articleApi.adminGetArticles({ page: 1, size: 1 })
     if (res.code === 200) {
       stats.value.totalArticles = res.data.total
     }
 
-    const publishedRes: any = await articleApi.adminGetArticles({ page: 1, size: 1, status: 'PUBLISHED' })
+    const publishedRes = await articleApi.adminGetArticles({ page: 1, size: 1, status: 'PUBLISHED' })
     if (publishedRes.code === 200) {
       stats.value.publishedArticles = publishedRes.data.total
     }
 
-    const draftRes: any = await articleApi.adminGetArticles({ page: 1, size: 1, status: 'DRAFT' })
+    const draftRes = await articleApi.adminGetArticles({ page: 1, size: 1, status: 'DRAFT' })
     if (draftRes.code === 200) {
       stats.value.draftArticles = draftRes.data.total
     }
