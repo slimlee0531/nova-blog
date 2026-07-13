@@ -1,13 +1,23 @@
 -- ============================================
 -- NovaBlog 数据库初始化脚本
--- 版本: 1.1 (修复版)
+-- 版本: 1.2 (完善版)
 -- 创建时间: 2026-07-13
 -- 描述: 创建博客系统核心表结构
 -- ============================================
 
+-- ============================================
+-- 第一步：创建数据库
+-- ============================================
+CREATE DATABASE IF NOT EXISTS `novablog`
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE `novablog`;
+
 -- 设置字符集
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
+SET SQL_MODE = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- ============================================
 -- 1. 用户表 (users)
@@ -15,7 +25,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ============================================
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '用户ID',
     `username` VARCHAR(50) NOT NULL COMMENT '用户名',
     `email` VARCHAR(100) NOT NULL COMMENT '邮箱',
     `password_hash` VARCHAR(255) NOT NULL COMMENT '密码哈希',
@@ -24,8 +34,9 @@ CREATE TABLE `users` (
     `bio` TEXT NULL COMMENT '个人简介',
     `role` ENUM('ADMIN', 'EDITOR', 'AUTHOR') NOT NULL DEFAULT 'AUTHOR' COMMENT '用户角色',
     `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否激活',
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `last_login_at` TIMESTAMP NULL DEFAULT NULL COMMENT '最后登录时间',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_username` (`username`),
     UNIQUE KEY `uk_email` (`email`)
@@ -37,14 +48,15 @@ CREATE TABLE `users` (
 -- ============================================
 DROP TABLE IF EXISTS `categories`;
 CREATE TABLE `categories` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '分类ID',
     `name` VARCHAR(100) NOT NULL COMMENT '分类名称',
     `slug` VARCHAR(100) NOT NULL COMMENT 'URL友好的标识',
     `description` TEXT NULL COMMENT '分类描述',
-    `parent_id` BIGINT NULL DEFAULT NULL COMMENT '父分类ID，支持多级分类',
+    `parent_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '父分类ID，支持多级分类',
     `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序顺序',
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `article_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '文章数量（冗余字段，便于查询）',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_slug` (`slug`),
     INDEX `idx_parent` (`parent_id`),
@@ -57,12 +69,13 @@ CREATE TABLE `categories` (
 -- ============================================
 DROP TABLE IF EXISTS `tags`;
 CREATE TABLE `tags` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '标签ID',
     `name` VARCHAR(50) NOT NULL COMMENT '标签名称',
     `slug` VARCHAR(50) NOT NULL COMMENT 'URL友好的标识',
     `description` VARCHAR(200) NULL DEFAULT NULL COMMENT '标签描述',
     `color` VARCHAR(7) NULL DEFAULT NULL COMMENT '标签颜色（十六进制）',
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `article_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '文章数量（冗余字段，便于查询）',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_name` (`name`),
     UNIQUE KEY `uk_slug` (`slug`)
@@ -74,7 +87,7 @@ CREATE TABLE `tags` (
 -- ============================================
 DROP TABLE IF EXISTS `articles`;
 CREATE TABLE `articles` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '文章ID',
     `title` VARCHAR(200) NOT NULL COMMENT '文章标题',
     `slug` VARCHAR(200) NOT NULL COMMENT 'URL友好的标识',
     `content` LONGTEXT NOT NULL COMMENT '文章内容（Markdown格式）',
@@ -84,7 +97,7 @@ CREATE TABLE `articles` (
     -- AI增强字段
     `ai_summary` TEXT NULL COMMENT 'AI生成的摘要',
     `ai_keywords` JSON NULL COMMENT 'AI提取的关键词',
-    `ai_reading_time` INT NULL COMMENT 'AI估算的阅读时间（分钟）',
+    `ai_reading_time` INT UNSIGNED NULL COMMENT 'AI估算的阅读时间（分钟）',
     `ai_content_quality_score` DECIMAL(3,2) NULL COMMENT 'AI内容质量评分（0.00-1.00）',
     `ai_suggested_tags` JSON NULL COMMENT 'AI建议的标签',
     `ai_suggested_category` VARCHAR(100) NULL COMMENT 'AI建议的分类',
@@ -98,7 +111,7 @@ CREATE TABLE `articles` (
     `visibility` ENUM('PUBLIC', 'PRIVATE', 'PASSWORD_PROTECTED') NOT NULL DEFAULT 'PUBLIC' COMMENT '可见性',
     `password` VARCHAR(100) NULL DEFAULT NULL COMMENT '访问密码（如果需要）',
 
-    -- 统计字段（使用触发器维护）
+    -- 统计字段
     `view_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '浏览次数',
     `like_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '点赞次数',
     `comment_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '评论数量',
@@ -110,15 +123,15 @@ CREATE TABLE `articles` (
     `og_image` VARCHAR(500) NULL DEFAULT NULL COMMENT 'Open Graph图片',
 
     -- 关联字段
-    `author_id` BIGINT NOT NULL COMMENT '作者ID',
-    `category_id` BIGINT NULL DEFAULT NULL COMMENT '分类ID',
+    `author_id` BIGINT UNSIGNED NOT NULL COMMENT '作者ID',
+    `category_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '分类ID',
     `featured_image` VARCHAR(500) NULL DEFAULT NULL COMMENT '特色图片URL',
 
     -- 时间字段
     `published_at` TIMESTAMP NULL DEFAULT NULL COMMENT '发布时间',
     `scheduled_at` TIMESTAMP NULL DEFAULT NULL COMMENT '计划发布时间',
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_slug` (`slug`),
@@ -136,9 +149,9 @@ CREATE TABLE `articles` (
 -- ============================================
 DROP TABLE IF EXISTS `article_tags`;
 CREATE TABLE `article_tags` (
-    `article_id` BIGINT NOT NULL,
-    `tag_id` BIGINT NOT NULL,
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `article_id` BIGINT UNSIGNED NOT NULL COMMENT '文章ID',
+    `tag_id` BIGINT UNSIGNED NOT NULL COMMENT '标签ID',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     PRIMARY KEY (`article_id`, `tag_id`),
     CONSTRAINT `fk_at_article` FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_at_tag` FOREIGN KEY (`tag_id`) REFERENCES `tags` (`id`) ON DELETE CASCADE
@@ -150,15 +163,16 @@ CREATE TABLE `article_tags` (
 -- ============================================
 DROP TABLE IF EXISTS `comments`;
 CREATE TABLE `comments` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '评论ID',
     `content` TEXT NOT NULL COMMENT '评论内容',
 
     -- 评论者信息
-    `user_id` BIGINT NULL DEFAULT NULL COMMENT '用户ID（如果是登录用户）',
+    `user_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '用户ID（如果是登录用户）',
     `guest_name` VARCHAR(100) NULL DEFAULT NULL COMMENT '访客名称（未登录用户）',
     `guest_email` VARCHAR(100) NULL DEFAULT NULL COMMENT '访客邮箱（未登录用户）',
     `guest_website` VARCHAR(200) NULL DEFAULT NULL COMMENT '访客网站（未登录用户）',
     `guest_ip` VARCHAR(45) NULL DEFAULT NULL COMMENT '访客IP地址',
+    `guest_user_agent` VARCHAR(500) NULL DEFAULT NULL COMMENT '访客User-Agent',
 
     -- Agent评论标识
     `is_agent_comment` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否为Agent评论',
@@ -166,8 +180,8 @@ CREATE TABLE `comments` (
     `agent_metadata` JSON NULL COMMENT 'Agent元数据',
 
     -- 评论关系
-    `article_id` BIGINT NOT NULL COMMENT '文章ID',
-    `parent_id` BIGINT NULL DEFAULT NULL COMMENT '父评论ID（支持多级评论）',
+    `article_id` BIGINT UNSIGNED NOT NULL COMMENT '文章ID',
+    `parent_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '父评论ID（支持多级评论）',
 
     -- 状态
     `status` ENUM('PENDING', 'APPROVED', 'REJECTED', 'SPAM') NOT NULL DEFAULT 'PENDING' COMMENT '审核状态',
@@ -175,8 +189,8 @@ CREATE TABLE `comments` (
     -- 统计
     `like_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '点赞数量',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
     PRIMARY KEY (`id`),
     INDEX `idx_article` (`article_id`),
@@ -194,7 +208,7 @@ CREATE TABLE `comments` (
 -- ============================================
 DROP TABLE IF EXISTS `media`;
 CREATE TABLE `media` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '媒体ID',
     `filename` VARCHAR(255) NOT NULL COMMENT '文件名',
     `original_name` VARCHAR(255) NOT NULL COMMENT '原始文件名',
     `mime_type` VARCHAR(100) NOT NULL COMMENT 'MIME类型',
@@ -215,11 +229,11 @@ CREATE TABLE `media` (
     `metadata` JSON NULL COMMENT '其他元数据',
 
     -- 关联
-    `uploader_id` BIGINT NOT NULL COMMENT '上传者ID',
-    `article_id` BIGINT NULL DEFAULT NULL COMMENT '关联文章ID（可选）',
+    `uploader_id` BIGINT UNSIGNED NOT NULL COMMENT '上传者ID',
+    `article_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '关联文章ID（可选）',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
     PRIMARY KEY (`id`),
     INDEX `idx_uploader` (`uploader_id`),
@@ -235,7 +249,7 @@ CREATE TABLE `media` (
 -- ============================================
 DROP TABLE IF EXISTS `ai_generation_logs`;
 CREATE TABLE `ai_generation_logs` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '日志ID',
 
     -- 操作信息
     `operation_type` ENUM(
@@ -269,14 +283,14 @@ CREATE TABLE `ai_generation_logs` (
     `cost_usd` DECIMAL(10,6) NULL DEFAULT NULL COMMENT '成本（美元）',
 
     -- 关联
-    `user_id` BIGINT NULL DEFAULT NULL COMMENT '触发操作的用户',
-    `article_id` BIGINT NULL DEFAULT NULL COMMENT '关联的文章',
+    `user_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '触发操作的用户',
+    `article_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '关联的文章',
 
     -- 状态
     `status` ENUM('SUCCESS', 'FAILED', 'TIMEOUT', 'CANCELLED') NOT NULL DEFAULT 'SUCCESS' COMMENT '执行状态',
     `error_message` TEXT NULL COMMENT '错误信息（如果失败）',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
 
     PRIMARY KEY (`id`),
     INDEX `idx_user` (`user_id`),
@@ -293,7 +307,7 @@ CREATE TABLE `ai_generation_logs` (
 -- ============================================
 DROP TABLE IF EXISTS `agent_api_keys`;
 CREATE TABLE `agent_api_keys` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '密钥ID',
 
     -- Agent信息
     `agent_name` VARCHAR(100) NOT NULL COMMENT 'Agent名称',
@@ -316,10 +330,10 @@ CREATE TABLE `agent_api_keys` (
     `total_requests` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '总请求次数',
 
     -- 关联
-    `user_id` BIGINT NOT NULL COMMENT '创建者ID',
+    `user_id` BIGINT UNSIGNED NOT NULL COMMENT '创建者ID',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_api_key_hash` (`api_key_hash`),
@@ -334,10 +348,10 @@ CREATE TABLE `agent_api_keys` (
 -- ============================================
 DROP TABLE IF EXISTS `agent_access_logs`;
 CREATE TABLE `agent_access_logs` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '日志ID',
 
     -- Agent信息
-    `agent_api_key_id` BIGINT NULL DEFAULT NULL COMMENT '使用的API密钥ID',
+    `agent_api_key_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '使用的API密钥ID',
     `agent_name` VARCHAR(100) NOT NULL COMMENT 'Agent名称',
     `agent_ip` VARCHAR(45) NULL DEFAULT NULL COMMENT 'Agent IP地址',
     `user_agent` VARCHAR(500) NULL DEFAULT NULL COMMENT 'User-Agent字符串',
@@ -355,7 +369,7 @@ CREATE TABLE `agent_access_logs` (
 
     -- 内容访问
     `resource_type` ENUM('ARTICLE', 'COMMENT', 'MEDIA', 'API', 'OTHER') NULL DEFAULT NULL COMMENT '资源类型',
-    `resource_id` BIGINT NULL DEFAULT NULL COMMENT '资源ID',
+    `resource_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '资源ID',
 
     -- 分析
     `purpose` ENUM(
@@ -368,7 +382,7 @@ CREATE TABLE `agent_access_logs` (
         'OTHER'
     ) NULL DEFAULT NULL COMMENT '访问目的',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
 
     PRIMARY KEY (`id`),
     INDEX `idx_agent` (`agent_api_key_id`),
@@ -384,7 +398,7 @@ CREATE TABLE `agent_access_logs` (
 -- ============================================
 DROP TABLE IF EXISTS `knowledge_base_configs`;
 CREATE TABLE `knowledge_base_configs` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '配置ID',
 
     -- 配置信息
     `name` VARCHAR(100) NOT NULL COMMENT '知识库名称',
@@ -393,7 +407,7 @@ CREATE TABLE `knowledge_base_configs` (
     -- 内容范围
     `include_categories` JSON NULL COMMENT '包含的分类ID列表',
     `include_tags` JSON NULL COMMENT '包含的标签ID列表',
-    `include_statuses` JSON NOT NULL DEFAULT '["PUBLISHED"]' COMMENT '包含的文章状态',
+    `include_statuses` JSON NULL COMMENT '包含的文章状态（默认PUBLISHED，在应用层处理）',
     `date_range_start` DATE NULL DEFAULT NULL COMMENT '开始日期',
     `date_range_end` DATE NULL DEFAULT NULL COMMENT '结束日期',
 
@@ -417,10 +431,10 @@ CREATE TABLE `knowledge_base_configs` (
     `total_documents` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '文档总数',
 
     -- 关联
-    `user_id` BIGINT NOT NULL COMMENT '创建者ID',
+    `user_id` BIGINT UNSIGNED NOT NULL COMMENT '创建者ID',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
     PRIMARY KEY (`id`),
     INDEX `idx_user` (`user_id`),
@@ -434,7 +448,7 @@ CREATE TABLE `knowledge_base_configs` (
 -- ============================================
 DROP TABLE IF EXISTS `knowledge_base_documents`;
 CREATE TABLE `knowledge_base_documents` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '文档ID',
 
     -- 文档内容
     `content` TEXT NOT NULL COMMENT '文档内容',
@@ -451,16 +465,16 @@ CREATE TABLE `knowledge_base_documents` (
 
     -- 来源
     `source_type` ENUM('ARTICLE', 'COMMENT', 'CUSTOM') NOT NULL COMMENT '来源类型',
-    `source_id` BIGINT NULL DEFAULT NULL COMMENT '来源ID',
+    `source_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '来源ID',
 
     -- 状态
     `status` ENUM('ACTIVE', 'DELETED', 'UPDATED') NOT NULL DEFAULT 'ACTIVE' COMMENT '状态',
 
     -- 关联
-    `config_id` BIGINT NOT NULL COMMENT '知识库配置ID',
+    `config_id` BIGINT UNSIGNED NOT NULL COMMENT '知识库配置ID',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
     PRIMARY KEY (`id`),
     INDEX `idx_config` (`config_id`),
@@ -476,15 +490,15 @@ CREATE TABLE `knowledge_base_documents` (
 -- ============================================
 DROP TABLE IF EXISTS `likes`;
 CREATE TABLE `likes` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `user_id` BIGINT NULL DEFAULT NULL COMMENT '用户ID（登录用户）',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '点赞ID',
+    `user_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '用户ID（登录用户）',
     `ip_address` VARCHAR(45) NULL DEFAULT NULL COMMENT 'IP地址（未登录用户）',
     `fingerprint` VARCHAR(255) NULL DEFAULT NULL COMMENT '浏览器指纹（未登录用户）',
 
     `likeable_type` ENUM('ARTICLE', 'COMMENT') NOT NULL COMMENT '点赞类型',
-    `likeable_id` BIGINT NOT NULL COMMENT '点赞对象ID',
+    `likeable_id` BIGINT UNSIGNED NOT NULL COMMENT '点赞对象ID',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
 
     PRIMARY KEY (`id`),
     INDEX `idx_user` (`user_id`),
@@ -501,12 +515,12 @@ CREATE TABLE `likes` (
 -- ============================================
 DROP TABLE IF EXISTS `bookmarks`;
 CREATE TABLE `bookmarks` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `user_id` BIGINT NOT NULL COMMENT '用户ID',
-    `article_id` BIGINT NOT NULL COMMENT '文章ID',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
+    `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
+    `article_id` BIGINT UNSIGNED NOT NULL COMMENT '文章ID',
     `note` TEXT NULL COMMENT '收藏备注',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_user_article` (`user_id`, `article_id`),
@@ -520,57 +534,73 @@ CREATE TABLE `bookmarks` (
 -- ============================================
 DROP TABLE IF EXISTS `system_configs`;
 CREATE TABLE `system_configs` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '配置ID',
     `config_key` VARCHAR(100) NOT NULL COMMENT '配置键',
     `config_value` TEXT NULL COMMENT '配置值',
     `config_type` ENUM('STRING', 'NUMBER', 'BOOLEAN', 'JSON') NOT NULL DEFAULT 'STRING' COMMENT '配置类型',
     `description` VARCHAR(200) NULL DEFAULT NULL COMMENT '配置描述',
     `is_public` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否公开（前端可访问）',
 
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_config_key` (`config_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
 
 -- ============================================
--- 触发器：维护文章统计字段
+-- 触发器：维护统计字段
 -- ============================================
 
--- 点赞触发器 - 更新文章点赞数
 DELIMITER //
-CREATE TRIGGER `trg_after_like_insert`
+
+-- 文章点赞触发器
+CREATE TRIGGER `trg_article_like_insert`
 AFTER INSERT ON `likes`
 FOR EACH ROW
 BEGIN
     IF NEW.likeable_type = 'ARTICLE' THEN
         UPDATE `articles` SET `like_count` = `like_count` + 1 WHERE `id` = NEW.likeable_id;
-    ELSEIF NEW.likeable_type = 'COMMENT' THEN
-        UPDATE `comments` SET `like_count` = `like_count` + 1 WHERE `id` = NEW.likeable_id;
     END IF;
 END//
 
-CREATE TRIGGER `trg_after_like_delete`
+CREATE TRIGGER `trg_article_like_delete`
 AFTER DELETE ON `likes`
 FOR EACH ROW
 BEGIN
     IF OLD.likeable_type = 'ARTICLE' THEN
         UPDATE `articles` SET `like_count` = GREATEST(`like_count` - 1, 0) WHERE `id` = OLD.likeable_id;
-    ELSEIF OLD.likeable_type = 'COMMENT' THEN
+    END IF;
+END//
+
+-- 评论点赞触发器
+CREATE TRIGGER `trg_comment_like_insert`
+AFTER INSERT ON `likes`
+FOR EACH ROW
+BEGIN
+    IF NEW.likeable_type = 'COMMENT' THEN
+        UPDATE `comments` SET `like_count` = `like_count` + 1 WHERE `id` = NEW.likeable_id;
+    END IF;
+END//
+
+CREATE TRIGGER `trg_comment_like_delete`
+AFTER DELETE ON `likes`
+FOR EACH ROW
+BEGIN
+    IF OLD.likeable_type = 'COMMENT' THEN
         UPDATE `comments` SET `like_count` = GREATEST(`like_count` - 1, 0) WHERE `id` = OLD.likeable_id;
     END IF;
 END//
 
 -- 评论触发器 - 更新文章评论数
-CREATE TRIGGER `trg_after_comment_insert`
+CREATE TRIGGER `trg_comment_insert`
 AFTER INSERT ON `comments`
 FOR EACH ROW
 BEGIN
     UPDATE `articles` SET `comment_count` = `comment_count` + 1 WHERE `id` = NEW.article_id;
 END//
 
-CREATE TRIGGER `trg_after_comment_delete`
+CREATE TRIGGER `trg_comment_delete`
 AFTER DELETE ON `comments`
 FOR EACH ROW
 BEGIN
@@ -578,14 +608,14 @@ BEGIN
 END//
 
 -- 收藏触发器 - 更新文章收藏数
-CREATE TRIGGER `trg_after_bookmark_insert`
+CREATE TRIGGER `trg_bookmark_insert`
 AFTER INSERT ON `bookmarks`
 FOR EACH ROW
 BEGIN
     UPDATE `articles` SET `bookmark_count` = `bookmark_count` + 1 WHERE `id` = NEW.article_id;
 END//
 
-CREATE TRIGGER `trg_after_bookmark_delete`
+CREATE TRIGGER `trg_bookmark_delete`
 AFTER DELETE ON `bookmarks`
 FOR EACH ROW
 BEGIN
@@ -597,6 +627,10 @@ DELIMITER ;
 -- ============================================
 -- 初始数据
 -- ============================================
+
+-- 默认管理员用户（密码：admin123，实际使用时应修改）
+INSERT INTO `users` (`username`, `email`, `password_hash`, `display_name`, `role`) VALUES
+('admin', 'admin@novablog.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '管理员', 'ADMIN');
 
 -- 默认分类
 INSERT INTO `categories` (`name`, `slug`, `description`, `sort_order`) VALUES
@@ -622,9 +656,16 @@ INSERT INTO `system_configs` (`config_key`, `config_value`, `config_type`, `desc
 ('site_name', 'NovaBlog', 'STRING', '网站名称', 1),
 ('site_description', '面向AI时代的个人博客', 'STRING', '网站描述', 1),
 ('site_url', 'https://novablog.example.com', 'STRING', '网站URL', 1),
+('admin_email', 'admin@novablog.com', 'STRING', '管理员邮箱', 0),
 ('ai_enabled', 'true', 'BOOLEAN', '是否启用AI功能', 1),
 ('agent_api_enabled', 'true', 'BOOLEAN', '是否启用Agent API', 1),
 ('default_embedding_model', 'text-embedding-ada-002', 'STRING', '默认嵌入模型', 0),
-('max_upload_size', '10485760', 'NUMBER', '最大上传大小（字节）', 0);
+('max_upload_size', '10485760', 'NUMBER', '最大上传大小（字节）', 0),
+('articles_per_page', '10', 'NUMBER', '每页文章数', 1),
+('comments_per_page', '20', 'NUMBER', '每页评论数', 1);
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================
+-- 完成！
+-- ============================================
