@@ -1,6 +1,6 @@
 -- ============================================
 -- NovaBlog 数据库初始化脚本
--- 版本: 1.0
+-- 版本: 1.1 (修复版)
 -- 创建时间: 2026-07-13
 -- 描述: 创建博客系统核心表结构
 -- ============================================
@@ -28,9 +28,7 @@ CREATE TABLE `users` (
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_username` (`username`),
-    UNIQUE KEY `uk_email` (`email`),
-    INDEX `idx_email` (`email`),
-    INDEX `idx_username` (`username`)
+    UNIQUE KEY `uk_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- ============================================
@@ -45,12 +43,10 @@ CREATE TABLE `categories` (
     `description` TEXT NULL COMMENT '分类描述',
     `parent_id` BIGINT NULL DEFAULT NULL COMMENT '父分类ID，支持多级分类',
     `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序顺序',
-    `article_count` INT NOT NULL DEFAULT 0 COMMENT '文章数量（冗余字段，便于查询）',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_slug` (`slug`),
-    INDEX `idx_slug` (`slug`),
     INDEX `idx_parent` (`parent_id`),
     CONSTRAINT `fk_category_parent` FOREIGN KEY (`parent_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='分类表';
@@ -66,13 +62,10 @@ CREATE TABLE `tags` (
     `slug` VARCHAR(50) NOT NULL COMMENT 'URL友好的标识',
     `description` VARCHAR(200) NULL DEFAULT NULL COMMENT '标签描述',
     `color` VARCHAR(7) NULL DEFAULT NULL COMMENT '标签颜色（十六进制）',
-    `article_count` INT NOT NULL DEFAULT 0 COMMENT '文章数量',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_name` (`name`),
-    UNIQUE KEY `uk_slug` (`slug`),
-    INDEX `idx_slug` (`slug`),
-    INDEX `idx_name` (`name`)
+    UNIQUE KEY `uk_slug` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
 
 -- ============================================
@@ -92,7 +85,7 @@ CREATE TABLE `articles` (
     `ai_summary` TEXT NULL COMMENT 'AI生成的摘要',
     `ai_keywords` JSON NULL COMMENT 'AI提取的关键词',
     `ai_reading_time` INT NULL COMMENT 'AI估算的阅读时间（分钟）',
-    `ai_content_quality_score` DECIMAL(3,2) NULL COMMENT 'AI内容质量评分（0-1）',
+    `ai_content_quality_score` DECIMAL(3,2) NULL COMMENT 'AI内容质量评分（0.00-1.00）',
     `ai_suggested_tags` JSON NULL COMMENT 'AI建议的标签',
     `ai_suggested_category` VARCHAR(100) NULL COMMENT 'AI建议的分类',
 
@@ -105,11 +98,11 @@ CREATE TABLE `articles` (
     `visibility` ENUM('PUBLIC', 'PRIVATE', 'PASSWORD_PROTECTED') NOT NULL DEFAULT 'PUBLIC' COMMENT '可见性',
     `password` VARCHAR(100) NULL DEFAULT NULL COMMENT '访问密码（如果需要）',
 
-    -- 统计字段
-    `view_count` INT NOT NULL DEFAULT 0 COMMENT '浏览次数',
-    `like_count` INT NOT NULL DEFAULT 0 COMMENT '点赞次数',
-    `comment_count` INT NOT NULL DEFAULT 0 COMMENT '评论数量',
-    `bookmark_count` INT NOT NULL DEFAULT 0 COMMENT '收藏次数',
+    -- 统计字段（使用触发器维护）
+    `view_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '浏览次数',
+    `like_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '点赞次数',
+    `comment_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '评论数量',
+    `bookmark_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '收藏次数',
 
     -- SEO字段
     `meta_title` VARCHAR(200) NULL DEFAULT NULL COMMENT 'SEO标题',
@@ -129,7 +122,6 @@ CREATE TABLE `articles` (
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_slug` (`slug`),
-    INDEX `idx_slug` (`slug`),
     INDEX `idx_status` (`status`),
     INDEX `idx_author` (`author_id`),
     INDEX `idx_category` (`category_id`),
@@ -166,6 +158,7 @@ CREATE TABLE `comments` (
     `guest_name` VARCHAR(100) NULL DEFAULT NULL COMMENT '访客名称（未登录用户）',
     `guest_email` VARCHAR(100) NULL DEFAULT NULL COMMENT '访客邮箱（未登录用户）',
     `guest_website` VARCHAR(200) NULL DEFAULT NULL COMMENT '访客网站（未登录用户）',
+    `guest_ip` VARCHAR(45) NULL DEFAULT NULL COMMENT '访客IP地址',
 
     -- Agent评论标识
     `is_agent_comment` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否为Agent评论',
@@ -180,7 +173,7 @@ CREATE TABLE `comments` (
     `status` ENUM('PENDING', 'APPROVED', 'REJECTED', 'SPAM') NOT NULL DEFAULT 'PENDING' COMMENT '审核状态',
 
     -- 统计
-    `like_count` INT NOT NULL DEFAULT 0 COMMENT '点赞数量',
+    `like_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '点赞数量',
 
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -192,7 +185,7 @@ CREATE TABLE `comments` (
     INDEX `idx_parent` (`parent_id`),
     CONSTRAINT `fk_comment_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
     CONSTRAINT `fk_comment_article` FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_comment_parent` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE
+    CONSTRAINT `fk_comment_parent` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表';
 
 -- ============================================
@@ -205,13 +198,13 @@ CREATE TABLE `media` (
     `filename` VARCHAR(255) NOT NULL COMMENT '文件名',
     `original_name` VARCHAR(255) NOT NULL COMMENT '原始文件名',
     `mime_type` VARCHAR(100) NOT NULL COMMENT 'MIME类型',
-    `file_size` BIGINT NOT NULL COMMENT '文件大小（字节）',
+    `file_size` BIGINT UNSIGNED NOT NULL COMMENT '文件大小（字节）',
     `file_path` VARCHAR(500) NOT NULL COMMENT '文件存储路径',
     `url` VARCHAR(500) NOT NULL COMMENT '访问URL',
 
     -- 图片特有字段
-    `width` INT NULL DEFAULT NULL COMMENT '图片宽度',
-    `height` INT NULL DEFAULT NULL COMMENT '图片高度',
+    `width` INT UNSIGNED NULL DEFAULT NULL COMMENT '图片宽度',
+    `height` INT UNSIGNED NULL DEFAULT NULL COMMENT '图片高度',
     `alt_text` VARCHAR(200) NULL DEFAULT NULL COMMENT '替代文本（SEO和无障碍）',
 
     -- AI分析字段
@@ -271,8 +264,8 @@ CREATE TABLE `ai_generation_logs` (
     `prompt_template` TEXT NULL COMMENT '使用的提示词模板',
 
     -- 性能指标
-    `tokens_used` INT NULL DEFAULT NULL COMMENT '消耗的token数量',
-    `processing_time_ms` INT NULL DEFAULT NULL COMMENT '处理时间（毫秒）',
+    `tokens_used` INT UNSIGNED NULL DEFAULT NULL COMMENT '消耗的token数量',
+    `processing_time_ms` INT UNSIGNED NULL DEFAULT NULL COMMENT '处理时间（毫秒）',
     `cost_usd` DECIMAL(10,6) NULL DEFAULT NULL COMMENT '成本（美元）',
 
     -- 关联
@@ -313,14 +306,14 @@ CREATE TABLE `agent_api_keys` (
 
     -- 权限控制
     `permissions` JSON NOT NULL COMMENT '权限列表（如：read, write, analyze）',
-    `rate_limit` INT NOT NULL DEFAULT 100 COMMENT '每分钟请求限制',
-    `daily_limit` INT NOT NULL DEFAULT 10000 COMMENT '每日请求限制',
+    `rate_limit` INT UNSIGNED NOT NULL DEFAULT 100 COMMENT '每分钟请求限制',
+    `daily_limit` INT UNSIGNED NOT NULL DEFAULT 10000 COMMENT '每日请求限制',
 
     -- 状态
     `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否激活',
     `expires_at` TIMESTAMP NULL DEFAULT NULL COMMENT '过期时间',
     `last_used_at` TIMESTAMP NULL DEFAULT NULL COMMENT '最后使用时间',
-    `total_requests` INT NOT NULL DEFAULT 0 COMMENT '总请求次数',
+    `total_requests` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '总请求次数',
 
     -- 关联
     `user_id` BIGINT NOT NULL COMMENT '创建者ID',
@@ -330,7 +323,6 @@ CREATE TABLE `agent_api_keys` (
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_api_key_hash` (`api_key_hash`),
-    INDEX `idx_api_key` (`api_key_hash`),
     INDEX `idx_user` (`user_id`),
     INDEX `idx_agent_name` (`agent_name`),
     CONSTRAINT `fk_api_key_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
@@ -357,9 +349,9 @@ CREATE TABLE `agent_access_logs` (
     `request_body` JSON NULL COMMENT '请求体',
 
     -- 响应信息
-    `response_status` INT NULL DEFAULT NULL COMMENT '响应状态码',
-    `response_time_ms` INT NULL DEFAULT NULL COMMENT '响应时间（毫秒）',
-    `response_size_bytes` INT NULL DEFAULT NULL COMMENT '响应大小（字节）',
+    `response_status` SMALLINT UNSIGNED NULL DEFAULT NULL COMMENT '响应状态码',
+    `response_time_ms` INT UNSIGNED NULL DEFAULT NULL COMMENT '响应时间（毫秒）',
+    `response_size_bytes` INT UNSIGNED NULL DEFAULT NULL COMMENT '响应大小（字节）',
 
     -- 内容访问
     `resource_type` ENUM('ARTICLE', 'COMMENT', 'MEDIA', 'API', 'OTHER') NULL DEFAULT NULL COMMENT '资源类型',
@@ -406,14 +398,14 @@ CREATE TABLE `knowledge_base_configs` (
     `date_range_end` DATE NULL DEFAULT NULL COMMENT '结束日期',
 
     -- 处理选项
-    `chunk_size` INT NOT NULL DEFAULT 1000 COMMENT '文本分块大小（字符数）',
-    `chunk_overlap` INT NOT NULL DEFAULT 200 COMMENT '分块重叠大小',
+    `chunk_size` INT UNSIGNED NOT NULL DEFAULT 1000 COMMENT '文本分块大小（字符数）',
+    `chunk_overlap` INT UNSIGNED NOT NULL DEFAULT 200 COMMENT '分块重叠大小',
     `include_metadata` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否包含元数据',
     `include_comments` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否包含评论',
 
     -- 向量化选项
     `embedding_model` VARCHAR(100) NOT NULL DEFAULT 'text-embedding-ada-002' COMMENT '嵌入模型',
-    `embedding_dimensions` INT NOT NULL DEFAULT 1536 COMMENT '嵌入维度',
+    `embedding_dimensions` INT UNSIGNED NOT NULL DEFAULT 1536 COMMENT '嵌入维度',
 
     -- 访问控制
     `access_level` ENUM('PUBLIC', 'PRIVATE', 'RESTRICTED') NOT NULL DEFAULT 'PRIVATE' COMMENT '访问级别',
@@ -422,7 +414,7 @@ CREATE TABLE `knowledge_base_configs` (
     -- 状态
     `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否激活',
     `last_synced_at` TIMESTAMP NULL DEFAULT NULL COMMENT '最后同步时间',
-    `total_documents` INT NOT NULL DEFAULT 0 COMMENT '文档总数',
+    `total_documents` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '文档总数',
 
     -- 关联
     `user_id` BIGINT NOT NULL COMMENT '创建者ID',
@@ -450,11 +442,11 @@ CREATE TABLE `knowledge_base_documents` (
 
     -- 元数据
     `metadata` JSON NULL COMMENT '元数据（标题、作者、标签等）',
-    `chunk_index` INT NULL DEFAULT NULL COMMENT '分块索引',
-    `token_count` INT NULL DEFAULT NULL COMMENT 'token数量',
+    `chunk_index` INT UNSIGNED NULL DEFAULT NULL COMMENT '分块索引',
+    `token_count` INT UNSIGNED NULL DEFAULT NULL COMMENT 'token数量',
 
-    -- 向量嵌入
-    `embedding` BLOB NULL COMMENT '向量嵌入（用于相似度搜索）',
+    -- 向量嵌入（使用JSON存储，便于不同维度）
+    `embedding` JSON NULL COMMENT '向量嵌入（JSON数组格式）',
     `embedding_model` VARCHAR(100) NULL DEFAULT NULL COMMENT '使用的嵌入模型',
 
     -- 来源
@@ -485,8 +477,9 @@ CREATE TABLE `knowledge_base_documents` (
 DROP TABLE IF EXISTS `likes`;
 CREATE TABLE `likes` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `user_id` BIGINT NULL DEFAULT NULL COMMENT '用户ID（未登录用户用IP）',
-    `ip_address` VARCHAR(45) NULL DEFAULT NULL COMMENT 'IP地址',
+    `user_id` BIGINT NULL DEFAULT NULL COMMENT '用户ID（登录用户）',
+    `ip_address` VARCHAR(45) NULL DEFAULT NULL COMMENT 'IP地址（未登录用户）',
+    `fingerprint` VARCHAR(255) NULL DEFAULT NULL COMMENT '浏览器指纹（未登录用户）',
 
     `likeable_type` ENUM('ARTICLE', 'COMMENT') NOT NULL COMMENT '点赞类型',
     `likeable_id` BIGINT NOT NULL COMMENT '点赞对象ID',
@@ -496,7 +489,10 @@ CREATE TABLE `likes` (
     PRIMARY KEY (`id`),
     INDEX `idx_user` (`user_id`),
     INDEX `idx_likeable` (`likeable_type`, `likeable_id`),
-    UNIQUE KEY `idx_unique_like` (`user_id`, `likeable_type`, `likeable_id`),
+    -- 组合唯一索引：确保同一用户/IP+指纹对同一对象只能点赞一次
+    -- 注意：MySQL允许多个NULL值，所以需要在应用层处理
+    UNIQUE KEY `uk_user_like` (`user_id`, `likeable_type`, `likeable_id`),
+    UNIQUE KEY `uk_ip_like` (`ip_address`, `fingerprint`, `likeable_type`, `likeable_id`),
     CONSTRAINT `fk_like_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点赞表';
 
@@ -513,7 +509,7 @@ CREATE TABLE `bookmarks` (
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_user_article` (`user_id`, `article_id`),
+    UNIQUE KEY `uk_user_article` (`user_id`, `article_id`),
     CONSTRAINT `fk_bookmark_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_bookmark_article` FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏表';
@@ -535,9 +531,68 @@ CREATE TABLE `system_configs` (
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_config_key` (`config_key`),
-    INDEX `idx_key` (`config_key`)
+    UNIQUE KEY `uk_config_key` (`config_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
+
+-- ============================================
+-- 触发器：维护文章统计字段
+-- ============================================
+
+-- 点赞触发器 - 更新文章点赞数
+DELIMITER //
+CREATE TRIGGER `trg_after_like_insert`
+AFTER INSERT ON `likes`
+FOR EACH ROW
+BEGIN
+    IF NEW.likeable_type = 'ARTICLE' THEN
+        UPDATE `articles` SET `like_count` = `like_count` + 1 WHERE `id` = NEW.likeable_id;
+    ELSEIF NEW.likeable_type = 'COMMENT' THEN
+        UPDATE `comments` SET `like_count` = `like_count` + 1 WHERE `id` = NEW.likeable_id;
+    END IF;
+END//
+
+CREATE TRIGGER `trg_after_like_delete`
+AFTER DELETE ON `likes`
+FOR EACH ROW
+BEGIN
+    IF OLD.likeable_type = 'ARTICLE' THEN
+        UPDATE `articles` SET `like_count` = GREATEST(`like_count` - 1, 0) WHERE `id` = OLD.likeable_id;
+    ELSEIF OLD.likeable_type = 'COMMENT' THEN
+        UPDATE `comments` SET `like_count` = GREATEST(`like_count` - 1, 0) WHERE `id` = OLD.likeable_id;
+    END IF;
+END//
+
+-- 评论触发器 - 更新文章评论数
+CREATE TRIGGER `trg_after_comment_insert`
+AFTER INSERT ON `comments`
+FOR EACH ROW
+BEGIN
+    UPDATE `articles` SET `comment_count` = `comment_count` + 1 WHERE `id` = NEW.article_id;
+END//
+
+CREATE TRIGGER `trg_after_comment_delete`
+AFTER DELETE ON `comments`
+FOR EACH ROW
+BEGIN
+    UPDATE `articles` SET `comment_count` = GREATEST(`comment_count` - 1, 0) WHERE `id` = OLD.article_id;
+END//
+
+-- 收藏触发器 - 更新文章收藏数
+CREATE TRIGGER `trg_after_bookmark_insert`
+AFTER INSERT ON `bookmarks`
+FOR EACH ROW
+BEGIN
+    UPDATE `articles` SET `bookmark_count` = `bookmark_count` + 1 WHERE `id` = NEW.article_id;
+END//
+
+CREATE TRIGGER `trg_after_bookmark_delete`
+AFTER DELETE ON `bookmarks`
+FOR EACH ROW
+BEGIN
+    UPDATE `articles` SET `bookmark_count` = GREATEST(`bookmark_count` - 1, 0) WHERE `id` = OLD.article_id;
+END//
+
+DELIMITER ;
 
 -- ============================================
 -- 初始数据
