@@ -2,58 +2,77 @@
 @import '../styles/transitions.css';
 @import '../styles/dark.css';
 
-/* ==================== App 基础 ==================== */
-#app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+/* ==================== Base ==================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ==================== Element Plus 主题覆盖 (Apple Style) ==================== */
-:root {
-  /* 覆盖 Element Plus 主色为 Apple Blue */
-  --el-color-primary: var(--color-primary);
-  --el-color-primary-light-3: var(--color-primary-light);
-  --el-color-primary-light-5: rgba(0, 113, 227, 0.5);
-  --el-color-primary-light-7: rgba(0, 113, 227, 0.3);
-  --el-color-primary-light-9: rgba(0, 113, 227, 0.1);
-  --el-color-primary-dark-2: var(--color-primary-dark);
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  color: var(--color-text);
+  background: var(--color-surface);
+  line-height: var(--leading-normal);
+}
 
-  /* 圆角统一 */
+#app {
+  min-height: 100vh;
+}
+
+/* ==================== Element Plus Overrides ==================== */
+:root {
+  --el-color-primary: var(--color-primary);
+  --el-color-primary-light-3: #a8c7fa;
+  --el-color-primary-light-5: #c2d9fc;
+  --el-color-primary-light-7: #e8f0fe;
+  --el-color-primary-light-9: #f0f6ff;
+  --el-color-primary-dark-2: var(--color-primary-hover);
+
   --el-border-radius-base: var(--radius-sm);
-  --el-border-radius-small: var(--radius-xs);
+  --el-border-radius-small: 6px;
   --el-border-radius-round: var(--radius-full);
 
-  /* 字体统一 */
   --el-font-family: var(--font-sans);
-  --el-font-size-base: var(--text-sm);
-  --el-font-size-medium: var(--text-base);
-  --el-font-size-large: var(--text-lg);
+  --el-font-size-base: 14px;
 }
 
-/* ==================== 工具类 ==================== */
+/* ==================== Utilities ==================== */
 .container {
-  max-width: var(--content-max-width);
+  max-width: var(--content-max);
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
+  padding: 0 var(--space-6);
 }
 
-.card {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-light);
-  transition: all var(--transition-base);
+/* ==================== Scrollbar ==================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.card:hover {
-  box-shadow: var(--shadow-sm);
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* ==================== 响应式工具 ==================== */
-@media (max-width: 768px) {
-  .container {
-    padding: 0 var(--spacing-md);
-  }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+/* ==================== Selection ==================== */
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-text);
 }

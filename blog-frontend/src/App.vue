@@ -28,55 +28,49 @@ const toggleMobileMenu = () => {
 </script>
 
 <template>
-  <!-- 前台布局 -->
   <div v-if="!isAdminRoute" class="app-layout">
-    <header class="app-header">
-      <div class="header-inner">
-        <div class="header-left">
-          <router-link to="/" class="logo">
-            <span class="logo-icon">✦</span>
-            <span class="logo-text">NovaBlog</span>
-          </router-link>
-        </div>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-container">
+        <router-link to="/" class="logo">
+          <div class="logo-mark">N</div>
+          <span class="logo-text">NovaBlog</span>
+        </router-link>
 
-        <nav class="header-nav" :class="{ open: mobileMenuOpen }">
-          <router-link to="/" class="nav-link" @click="mobileMenuOpen = false">首页</router-link>
-          <a class="nav-link" href="https://github.com" target="_blank">GitHub</a>
+        <nav class="nav" :class="{ open: mobileMenuOpen }">
+          <router-link to="/" class="nav-item" @click="mobileMenuOpen = false">首页</router-link>
+          <a class="nav-item" href="https://github.com" target="_blank">GitHub</a>
         </nav>
 
-        <div class="header-right">
+        <div class="header-actions">
           <ThemeToggle />
           <template v-if="userStore.token">
-            <router-link to="/write" class="nav-link write-link">
-              <span>✍️</span> 写文章
-            </router-link>
+            <router-link to="/write" class="btn-text">写文章</router-link>
             <el-dropdown trigger="click">
-              <button class="user-avatar-btn">
-                <el-avatar :size="32">
+              <button class="avatar-btn">
+                <div class="avatar">
                   {{ userStore.userInfo?.username?.charAt(0) || 'U' }}
-                </el-avatar>
+                </div>
               </button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="router.push('/admin')">
-                    ⚙️ 后台管理
+                    管理后台
                   </el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">
-                    🚪 退出登录
+                    退出登录
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
           </template>
           <template v-else>
-            <router-link to="/login" class="nav-link">登录</router-link>
-            <router-link to="/register" class="register-btn">注册</router-link>
+            <router-link to="/login" class="btn-text">登录</router-link>
+            <router-link to="/register" class="btn-primary">注册</router-link>
           </template>
 
-          <!-- 移动端菜单按钮 -->
-          <button class="mobile-menu-btn" @click="toggleMobileMenu">
-            <span class="hamburger" :class="{ active: mobileMenuOpen }">
-              <span></span>
+          <button class="menu-btn" @click="toggleMobileMenu">
+            <span class="menu-icon" :class="{ active: mobileMenuOpen }">
               <span></span>
               <span></span>
             </span>
@@ -85,286 +79,331 @@ const toggleMobileMenu = () => {
       </div>
     </header>
 
-    <main class="app-main">
+    <!-- Main -->
+    <main class="main">
       <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
+        <transition name="page" mode="out-in">
           <component :is="Component" />
         </transition>
       </router-view>
     </main>
 
-    <footer class="app-footer">
-      <div class="footer-inner">
-        <p>© 2026 NovaBlog · 面向AI时代的博客系统</p>
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <div class="logo-mark small">N</div>
+            <span>NovaBlog</span>
+          </div>
+          <p class="footer-copy">© 2026 NovaBlog. Crafted with care.</p>
+        </div>
       </div>
     </footer>
   </div>
 
-  <!-- 后台布局 -->
   <router-view v-else />
 </template>
 
 <style scoped>
-/* ==================== 前台布局 ==================== */
+/* ==================== Layout ==================== */
 .app-layout {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--color-surface);
 }
 
-/* ==================== Header (Premium Style) ==================== */
-.app-header {
+/* ==================== Header ==================== */
+.header {
   position: sticky;
   top: 0;
-  z-index: var(--z-header);
-  background: rgba(251, 251, 253, 0.72);
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
-[data-theme="dark"] .app-header {
-  background: rgba(0, 0, 0, 0.72);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+[data-theme="dark"] .header {
+  background: rgba(30, 30, 30, 0.85);
+  border-bottom-color: var(--color-border);
 }
 
-.header-inner {
-  max-width: var(--content-max-width);
+.header-container {
+  max-width: var(--content-max);
   margin: 0 auto;
   height: var(--header-height);
-  padding: 0 var(--spacing-lg);
+  padding: 0 var(--space-6);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
+/* ==================== Logo ==================== */
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-decoration: none;
   color: var(--color-text);
-  font-weight: var(--font-semibold);
-  font-size: 18px;
-  letter-spacing: -0.4px;
-  transition: opacity var(--transition-fast);
 }
 
 .logo:hover {
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
-.logo-icon {
-  width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  background: var(--color-text);
+  color: var(--color-surface);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 14px;
-  font-weight: bold;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.logo-mark.small {
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  border-radius: 6px;
 }
 
 .logo-text {
-  letter-spacing: -0.5px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
 }
 
-/* ==================== 导航 ==================== */
-.header-nav {
+/* ==================== Navigation ==================== */
+.nav {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+.nav-item {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--color-text-secondary);
   text-decoration: none;
-  font-size: 14px;
-  font-weight: var(--font-medium);
   border-radius: var(--radius-full);
-  transition: all var(--transition-fast);
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
-.nav-link:hover {
+.nav-item:hover {
   color: var(--color-text);
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--color-surface-container);
 }
 
-[data-theme="dark"] .nav-link:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.write-link {
+.nav-item.router-link-active {
   color: var(--color-primary);
 }
 
-.write-link:hover {
-  background: var(--color-primary-bg);
-}
-
-.register-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 20px;
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  font-size: 14px;
-  font-weight: var(--font-medium);
-  border-radius: var(--radius-full);
-  text-decoration: none;
-  transition: all var(--transition-fast);
-  box-shadow: 0 1px 3px rgba(10, 132, 255, 0.3);
-}
-
-.register-btn:hover {
-  background: var(--color-primary-dark);
-  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4);
-  transform: translateY(-1px);
-}
-
-/* ==================== Header 右侧 ==================== */
-.header-right {
+/* ==================== Actions ==================== */
+.header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.user-avatar-btn {
-  padding: 0;
+.btn-text {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
   border-radius: var(--radius-full);
-  overflow: hidden;
-  transition: all var(--transition-fast);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
-.user-avatar-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+.btn-text:hover {
+  color: var(--color-text);
+  background: var(--color-surface-container);
 }
 
-/* ==================== 移动端菜单 ==================== */
-.mobile-menu-btn {
+.btn-primary {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-on-primary);
+  background: var(--color-primary);
+  text-decoration: none;
+  border-radius: var(--radius-full);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.avatar-btn {
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--color-surface-container);
+  color: var(--color-text);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.avatar-btn:hover .avatar {
+  background: var(--color-surface-hover);
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
+}
+
+/* ==================== Mobile Menu ==================== */
+.menu-btn {
   display: none;
   padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: background var(--transition-fast);
 }
 
-.mobile-menu-btn:hover {
-  background: rgba(0, 0, 0, 0.04);
+.menu-btn:hover {
+  background: var(--color-surface-container);
 }
 
-.hamburger {
+.menu-icon {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  width: 18px;
+  width: 20px;
 }
 
-.hamburger span {
+.menu-icon span {
   display: block;
-  height: 1.5px;
+  height: 2px;
   background: var(--color-text);
   border-radius: 1px;
-  transition: all var(--transition-base);
+  transition: all var(--duration-normal) var(--ease-out);
+  transform-origin: center;
 }
 
-.hamburger.active span:nth-child(1) {
-  transform: translateY(6.5px) rotate(45deg);
+.menu-icon.active span:first-child {
+  transform: translateY(3.5px) rotate(45deg);
 }
 
-.hamburger.active span:nth-child(2) {
-  opacity: 0;
-}
-
-.hamburger.active span:nth-child(3) {
-  transform: translateY(-6.5px) rotate(-45deg);
+.menu-icon.active span:last-child {
+  transform: translateY(-3.5px) rotate(-45deg);
 }
 
 /* ==================== Main ==================== */
-.app-main {
+.main {
   flex: 1;
 }
 
-/* ==================== Footer (Premium Style) ==================== */
-.app-footer {
-  background: var(--color-bg-subtle);
-  border-top: 1px solid var(--color-border-light);
-  padding: var(--spacing-2xl) 0;
-  margin-top: var(--spacing-4xl);
+/* ==================== Footer ==================== */
+.footer {
+  border-top: 1px solid var(--color-border-subtle);
+  padding: var(--space-8) 0;
+  margin-top: var(--space-20);
 }
 
-.footer-inner {
-  max-width: var(--content-max-width);
+.footer-container {
+  max-width: var(--content-max);
   margin: 0 auto;
-  padding: 0 var(--spacing-lg);
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: 13px;
-  letter-spacing: 0.2px;
+  padding: 0 var(--space-6);
 }
 
-/* ==================== 响应式 ==================== */
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.footer-copy {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+}
+
+/* ==================== Responsive ==================== */
 @media (max-width: 768px) {
-  .header-nav {
+  .nav {
     display: none;
     position: fixed;
     top: var(--header-height);
     left: 0;
     right: 0;
-    background: rgba(251, 251, 253, 0.95);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    padding: var(--spacing-sm);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border-subtle);
+    padding: var(--space-2);
     flex-direction: column;
-    gap: 4px;
-    z-index: calc(var(--z-header) - 1);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    gap: 2px;
+    z-index: 99;
+    box-shadow: var(--shadow-lg);
   }
 
-  [data-theme="dark"] .header-nav {
-    background: rgba(0, 0, 0, 0.95);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-  }
-
-  .header-nav.open {
+  .nav.open {
     display: flex;
   }
 
-  .header-nav .nav-link {
+  .nav-item {
     width: 100%;
-    padding: 14px;
-    justify-content: center;
+    padding: 12px 16px;
     border-radius: var(--radius-md);
+    text-align: center;
   }
 
-  .mobile-menu-btn {
+  .menu-btn {
     display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .write-link {
+  .btn-text,
+  .btn-primary {
     display: none;
   }
 
-  .register-btn {
-    display: none;
+  .footer-content {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
   }
+}
 
-  .header-inner {
-    padding: 0 var(--spacing-md);
-  }
+/* ==================== Page Transition ==================== */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

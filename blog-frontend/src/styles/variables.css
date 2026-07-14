@@ -1,110 +1,91 @@
 /**
- * NovaBlog Design System - Premium Style
- * 精致优雅，高级质感
+ * NovaBlog Design System - Google/Apple Inspired
  */
 
 :root {
-  /* ==================== 主色 ==================== */
-  --color-primary: #0a84ff;
-  --color-primary-light: #409cff;
-  --color-primary-dark: #0060cc;
-  --color-primary-bg: rgba(10, 132, 255, 0.08);
-  --color-accent: #5e5ce6;
-  --color-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --color-gradient-subtle: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  /* ==================== Colors ==================== */
+  --color-primary: #1a73e8;
+  --color-primary-hover: #1557b0;
+  --color-primary-light: #e8f0fe;
 
-  /* ==================== 语义色 ==================== */
-  --color-success: #30d158;
-  --color-warning: #ff9f0a;
-  --color-danger: #ff453a;
-  --color-info: #64d2ff;
+  --color-text: #202124;
+  --color-text-secondary: #5f6368;
+  --color-text-tertiary: #80868b;
+  --color-text-on-primary: #ffffff;
 
-  /* ==================== 中性色 ==================== */
-  --color-text: #1d1d1f;
-  --color-text-secondary: #515154;
-  --color-text-muted: #8e8e93;
-  --color-text-inverse: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-dim: #f8f9fa;
+  --color-surface-container: #f1f3f4;
+  --color-surface-hover: #e8eaed;
 
-  --color-bg: #fbfbfd;
-  --color-bg-card: #ffffff;
-  --color-bg-subtle: #f5f5f7;
-  --color-bg-hover: #f0f0f2;
-  --color-bg-elevated: #ffffff;
+  --color-border: #dadce0;
+  --color-border-subtle: #e8eaed;
 
-  --color-border: #d2d2d7;
-  --color-border-light: #e8e8ed;
-  --color-divider: #e8e8ed;
+  --color-success: #1e8e3e;
+  --color-warning: #f9ab00;
+  --color-error: #d93025;
 
-  /* ==================== 间距 ==================== */
-  --spacing-2xs: 2px;
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-2xl: 48px;
-  --spacing-3xl: 64px;
-  --spacing-4xl: 96px;
+  /* ==================== Spacing ==================== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
 
-  /* ==================== 圆角 ==================== */
-  --radius-xs: 4px;
+  /* ==================== Radius ==================== */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 28px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
   --radius-full: 9999px;
 
-  /* ==================== 阴影 ==================== */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
-  --shadow-primary: 0 4px 16px rgba(10, 132, 255, 0.3);
-  --shadow-glow: 0 0 40px rgba(10, 132, 255, 0.15);
+  /* ==================== Shadows ==================== */
+  --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.1);
+  --shadow-md: 0 1px 3px rgba(60, 64, 67, 0.15), 0 1px 2px rgba(60, 64, 67, 0.1);
+  --shadow-lg: 0 4px 6px rgba(60, 64, 67, 0.1), 0 1px 3px rgba(60, 64, 67, 0.1);
+  --shadow-xl: 0 8px 16px rgba(60, 64, 67, 0.12), 0 2px 6px rgba(60, 64, 67, 0.08);
+  --shadow-2xl: 0 12px 24px rgba(60, 64, 67, 0.15), 0 4px 8px rgba(60, 64, 67, 0.1);
 
-  /* ==================== 排版 ==================== */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'PingFang SC', sans-serif;
-  --font-mono: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+  /* ==================== Typography ==================== */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Google Sans', 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'SF Mono', 'Google Sans Mono', Menlo, monospace;
 
-  --text-xs: 0.75rem;    /* 12px */
-  --text-sm: 0.875rem;   /* 14px */
-  --text-base: 1rem;     /* 16px */
-  --text-lg: 1.125rem;   /* 18px */
-  --text-xl: 1.25rem;    /* 20px */
-  --text-2xl: 1.5rem;    /* 24px */
-  --text-3xl: 2rem;      /* 32px */
-  --text-4xl: 2.5rem;    /* 40px */
-  --text-5xl: 3.5rem;    /* 56px */
+  --text-display: 56px;
+  --text-headline: 40px;
+  --text-title: 28px;
+  --text-subtitle: 20px;
+  --text-body: 16px;
+  --text-body-small: 14px;
+  --text-caption: 12px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
 
   --leading-tight: 1.2;
-  --leading-normal: 1.6;
-  --leading-relaxed: 1.8;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
 
-  --font-normal: 400;
-  --font-medium: 500;
-  --font-semibold: 600;
-  --font-bold: 700;
-
-  /* ==================== 布局 ==================== */
-  --header-height: 60px;
-  --content-max-width: 1100px;
-  --article-max-width: 720px;
+  /* ==================== Layout ==================== */
+  --header-height: 64px;
+  --content-max: 1100px;
+  --article-max: 720px;
   --sidebar-width: 320px;
-  --admin-sidebar-width: 240px;
-  --admin-sidebar-collapsed-width: 64px;
 
-  /* ==================== 过渡 ==================== */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  --transition-bounce: 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
-
-  /* ==================== Z-index ==================== */
-  --z-header: 100;
-  --z-dropdown: 200;
-  --z-modal: 300;
-  --z-toast: 400;
+  /* ==================== Motion ==================== */
+  --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0.0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
 }
