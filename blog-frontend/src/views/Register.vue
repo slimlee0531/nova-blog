@@ -241,6 +241,7 @@ const handleRegister = async () => {
   line-height: 1.15;
   letter-spacing: -1.5px;
   margin: 0 0 20px;
+  color: white;
 }
 
 .brand-desc {
@@ -279,6 +280,7 @@ const handleRegister = async () => {
   font-size: 15px;
   font-weight: 600;
   margin: 0 0 4px;
+  color: white;
 }
 
 .feature-text p {
