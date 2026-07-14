@@ -137,6 +137,18 @@ const submitComment = async () => {
   }
 }
 
+const shareArticle = () => {
+  if (navigator.share) {
+    navigator.share({
+      title: article.value?.title,
+      url: window.location.href
+    })
+  } else {
+    navigator.clipboard.writeText(window.location.href)
+    ElMessage.success('链接已复制')
+  }
+}
+
 onMounted(() => {
   fetchArticle()
 })
@@ -154,17 +166,32 @@ onMounted(() => {
     <template v-else-if="article">
       <!-- 文章头部 -->
       <div class="article-hero">
-        <div class="hero-content container">
+        <div class="hero-container">
+          <!-- 返回按钮 -->
+          <button class="back-btn" @click="router.push('/')">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>返回首页</span>
+          </button>
+
+          <!-- 文章元信息 -->
           <div class="article-meta">
             <span class="category" v-if="article.categoryName">{{ article.categoryName }}</span>
+            <span class="separator">·</span>
             <span class="date">{{ formatDate(article.publishedAt || article.createdAt) }}</span>
+            <span class="separator">·</span>
             <span class="reading-time" v-if="article.aiReadingTime">{{ article.aiReadingTime }}分钟阅读</span>
           </div>
+
+          <!-- 文章标题 -->
           <h1 class="article-title">{{ article.title }}</h1>
+
+          <!-- 作者信息 -->
           <div class="author-info">
-            <el-avatar :size="44">
+            <div class="author-avatar">
               {{ article.authorName?.charAt(0) || 'A' }}
-            </el-avatar>
+            </div>
             <div class="author-detail">
               <span class="author-name">{{ article.authorName || '匿名' }}</span>
               <span class="author-bio">发布于 {{ formatDate(article.publishedAt || article.createdAt) }}</span>
@@ -174,17 +201,18 @@ onMounted(() => {
       </div>
 
       <!-- 文章正文 -->
-      <div class="article-body container">
-        <div class="body-content" v-html="renderedContent"></div>
+      <div class="article-body">
+        <div class="body-container">
+          <div class="body-content" v-html="renderedContent"></div>
+        </div>
       </div>
 
       <!-- 文章底部 -->
-      <div class="article-footer-section">
-        <div class="footer-content container">
+      <div class="article-footer">
+        <div class="footer-container">
           <!-- 标签 -->
           <div class="article-tags" v-if="article.tags?.length">
-            <span class="tag-label">标签：</span>
-            <span v-for="tag in article.tags" :key="tag" class="tag">{{ tag }}</span>
+            <span v-for="tag in article.tags" :key="tag" class="tag">#{{ tag }}</span>
           </div>
 
           <!-- 互动按钮 -->
@@ -195,15 +223,21 @@ onMounted(() => {
               @click="toggleBookmark"
               :disabled="bookmarkLoading"
             >
-              <span>{{ isBookmarked ? '★' : '☆' }}</span>
-              <span>{{ isBookmarked ? '已收藏' : '收藏' }} {{ article.bookmarkCount || '' }}</span>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" :stroke="isBookmarked ? 'currentColor' : 'none'">
+                <path d="M19 21L12 16L5 21V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H17C17.5304 3 18.0391 3.21071 18.4142 3.58579C18.7893 3.96086 19 4.46957 19 5V21Z" :stroke="isBookmarked ? 'none' : 'currentColor'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>{{ isBookmarked ? '已收藏' : '收藏' }}</span>
+              <span class="count" v-if="article.bookmarkCount">{{ article.bookmarkCount }}</span>
             </button>
-            <button class="interaction-btn">
-              <span>💬</span>
-              <span>评论 {{ comments.length }}</span>
-            </button>
-            <button class="interaction-btn">
-              <span>🔗</span>
+
+            <button class="interaction-btn" @click="shareArticle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
               <span>分享</span>
             </button>
           </div>
@@ -211,66 +245,69 @@ onMounted(() => {
       </div>
 
       <!-- 评论区 -->
-      <div class="comments-section container">
-        <h3 class="comments-title">
-          <span>💬</span> 评论 ({{ comments.length }})
-        </h3>
+      <div class="comments-section">
+        <div class="comments-container">
+          <h3 class="comments-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            评论 ({{ comments.length }})
+          </h3>
 
-        <!-- 评论输入框 -->
-        <div class="comment-form" v-if="userStore.token">
-          <div class="form-header">
-            <el-avatar :size="36">
-              {{ userStore.userInfo?.username?.charAt(0) || 'U' }}
-            </el-avatar>
-            <span class="form-label">发表评论</span>
+          <!-- 评论输入框 -->
+          <div class="comment-form" v-if="userStore.token">
+            <div class="form-header">
+              <div class="form-avatar">
+                {{ userStore.userInfo?.username?.charAt(0) || 'U' }}
+              </div>
+              <span class="form-label">发表评论</span>
+            </div>
+            <textarea
+              v-model="commentContent"
+              rows="4"
+              placeholder="写下你的想法..."
+              :disabled="submitting"
+            ></textarea>
+            <div class="form-footer">
+              <button
+                class="submit-btn"
+                @click="submitComment"
+                :disabled="submitting"
+              >
+                {{ submitting ? '发布中...' : '发布评论' }}
+              </button>
+            </div>
           </div>
-          <el-input
-            v-model="commentContent"
-            type="textarea"
-            :rows="4"
-            placeholder="写下你的想法..."
-            :disabled="submitting"
-          />
-          <div class="form-footer">
-            <el-button
-              type="primary"
-              @click="submitComment"
-              :loading="submitting"
-              round
-            >
-              发布评论
-            </el-button>
+          <div class="login-hint" v-else>
+            <p>登录后即可参与评论</p>
+            <button class="login-btn" @click="router.push('/login')">立即登录</button>
           </div>
-        </div>
-        <div class="login-hint" v-else>
-          <p>登录后即可参与评论</p>
-          <el-button type="primary" round @click="router.push('/login')">立即登录</el-button>
-        </div>
 
-        <!-- 评论列表 -->
-        <div class="comments-list">
-          <TransitionGroup name="comment" tag="div">
-            <div v-for="comment in comments" :key="comment.id" class="comment-item">
-              <div class="comment-header">
-                <el-avatar :size="36">
-                  {{ comment.authorName?.charAt(0) || 'A' }}
-                </el-avatar>
-                <div class="comment-info">
-                  <span class="comment-author">{{ comment.authorName || '匿名' }}</span>
-                  <span class="comment-time">{{ formatDate(comment.createdAt) }}</span>
+          <!-- 评论列表 -->
+          <div class="comments-list">
+            <TransitionGroup name="comment" tag="div">
+              <div v-for="comment in comments" :key="comment.id" class="comment-item">
+                <div class="comment-header">
+                  <div class="comment-avatar">
+                    {{ comment.authorName?.charAt(0) || 'A' }}
+                  </div>
+                  <div class="comment-info">
+                    <span class="comment-author">{{ comment.authorName || '匿名' }}</span>
+                    <span class="comment-time">{{ formatDate(comment.createdAt) }}</span>
+                  </div>
+                  <span class="comment-status" v-if="comment.status === 'PENDING'">待审核</span>
+                </div>
+                <div class="comment-body">
+                  {{ comment.content }}
                 </div>
               </div>
-              <div class="comment-body">
-                {{ comment.content }}
-              </div>
-              <div class="comment-status" v-if="comment.status === 'PENDING'">
-                ⏳ 等待审核
-              </div>
-            </div>
-          </TransitionGroup>
+            </TransitionGroup>
 
-          <div v-if="comments.length === 0" class="empty-comments">
-            暂无评论，快来发表第一条评论吧！
+            <div v-if="comments.length === 0" class="empty-comments">
+              <div class="empty-icon">💬</div>
+              <p>暂无评论</p>
+              <span>快来发表第一条评论吧！</span>
+            </div>
           </div>
         </div>
       </div>
@@ -279,21 +316,21 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* ==================== 加载状态 ==================== */
+/* ==================== Loading ==================== */
 .loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 60vh;
-  color: var(--color-text-muted);
+  color: #999;
 }
 
 .spinner {
-  width: 32px;
-  height: 32px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-text);
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #667eea;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -303,54 +340,107 @@ onMounted(() => {
 }
 
 .loading-state p {
-  margin-top: var(--spacing-md);
+  margin-top: 16px;
+  font-size: 15px;
 }
 
-/* ==================== 文章头部 (Apple Style) ==================== */
+/* ==================== Article Hero ==================== */
 .article-hero {
-  background: var(--color-bg);
+  background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
+  padding: 80px 24px 60px;
 }
 
-.hero-content {
-  max-width: var(--article-max-width);
+[data-theme="dark"] .article-hero {
+  background: linear-gradient(180deg, #0a0a0a 0%, #111 100%);
+}
+
+.hero-container {
+  max-width: 800px;
   margin: 0 auto;
-  padding: var(--spacing-4xl) var(--spacing-lg) var(--spacing-2xl);
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 32px;
+}
+
+[data-theme="dark"] .back-btn {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #999;
+}
+
+.back-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
 }
 
 .article-meta {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .category {
-  color: var(--color-primary);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
+.separator {
+  color: #ccc;
+}
+
 .date,
 .reading-time {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  color: #999;
+  font-size: 14px;
 }
 
 .article-title {
   font-size: 48px;
-  font-weight: var(--font-bold);
-  color: var(--color-text);
-  margin-bottom: var(--spacing-xl);
-  line-height: 1.1;
-  letter-spacing: -1px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+  line-height: 1.15;
+  letter-spacing: -1.5px;
+}
+
+[data-theme="dark"] .article-title {
+  color: #fff;
 }
 
 .author-info {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: 14px;
+}
+
+.author-avatar {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .author-detail {
@@ -360,65 +450,96 @@ onMounted(() => {
 }
 
 .author-name {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--color-text);
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+[data-theme="dark"] .author-name {
+  color: #fff;
 }
 
 .author-bio {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
+  font-size: 13px;
+  color: #999;
 }
 
-/* ==================== 文章正文 (Apple Style) ==================== */
+/* ==================== Article Body ==================== */
 .article-body {
-  max-width: var(--article-max-width);
+  padding: 48px 24px;
+}
+
+.body-container {
+  max-width: 720px;
   margin: 0 auto;
-  padding: var(--spacing-xl) var(--spacing-lg);
 }
 
 .body-content {
-  line-height: var(--leading-relaxed);
-  color: var(--color-text-secondary);
-  font-size: var(--text-base);
+  line-height: 1.8;
+  color: #333;
+  font-size: 17px;
+}
+
+[data-theme="dark"] .body-content {
+  color: #ccc;
 }
 
 .body-content :deep(h1),
 .body-content :deep(h2),
 .body-content :deep(h3) {
-  color: var(--color-text);
-  margin-top: var(--spacing-2xl);
-  margin-bottom: var(--spacing-md);
-  font-weight: var(--font-semibold);
+  color: #1a1a1a;
+  margin-top: 48px;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .body-content :deep(h1),
+[data-theme="dark"] .body-content :deep(h2),
+[data-theme="dark"] .body-content :deep(h3) {
+  color: #fff;
 }
 
 .body-content :deep(h2) {
-  font-size: var(--text-2xl);
-  padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid var(--color-border-light);
+  font-size: 28px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+[data-theme="dark"] .body-content :deep(h2) {
+  border-bottom-color: #222;
+}
+
+.body-content :deep(h3) {
+  font-size: 22px;
 }
 
 .body-content :deep(p) {
-  margin-bottom: var(--spacing-lg);
-  color: var(--color-text-secondary);
+  margin-bottom: 24px;
 }
 
 .body-content :deep(code) {
-  background: var(--color-bg-subtle);
-  color: var(--color-text);
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
+  background: #f5f5f5;
+  color: #e44d26;
+  padding: 3px 8px;
+  border-radius: 6px;
   font-size: 0.9em;
+  font-family: 'SF Mono', Menlo, monospace;
+}
+
+[data-theme="dark"] .body-content :deep(code) {
+  background: #222;
+  color: #ff6b6b;
 }
 
 .body-content :deep(pre) {
-  background: var(--color-bg-subtle);
-  color: var(--color-text);
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-md);
+  background: #1a1a1a;
+  color: #fff;
+  padding: 24px;
+  border-radius: 12px;
   overflow-x: auto;
-  margin: var(--spacing-lg) 0;
-  border: 1px solid var(--color-border-light);
+  margin: 24px 0;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .body-content :deep(pre code) {
@@ -428,151 +549,307 @@ onMounted(() => {
 }
 
 .body-content :deep(blockquote) {
-  border-left: 3px solid var(--color-text-muted);
-  padding: var(--spacing-md) var(--spacing-lg);
-  margin: var(--spacing-lg) 0;
-  color: var(--color-text-secondary);
+  border-left: 4px solid #667eea;
+  padding: 20px 24px;
+  margin: 24px 0;
+  background: #f8f9fa;
+  border-radius: 0 12px 12px 0;
+  color: #555;
+}
+
+[data-theme="dark"] .body-content :deep(blockquote) {
+  background: #1a1a1a;
+  color: #999;
 }
 
 .body-content :deep(img) {
   max-width: 100%;
-  border-radius: var(--radius-md);
-  margin: var(--spacing-lg) 0;
+  border-radius: 12px;
+  margin: 32px 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-/* ==================== 文章底部 ==================== */
-.article-footer-section {
-  border-top: 1px solid var(--color-border-light);
-  border-bottom: 1px solid var(--color-border-light);
+.body-content :deep(ul),
+.body-content :deep(ol) {
+  padding-left: 24px;
+  margin-bottom: 24px;
 }
 
-.footer-content {
-  max-width: var(--article-max-width);
+.body-content :deep(li) {
+  margin-bottom: 8px;
+}
+
+/* ==================== Article Footer ==================== */
+.article-footer {
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 32px 24px;
+}
+
+[data-theme="dark"] .article-footer {
+  border-color: #222;
+}
+
+.footer-container {
+  max-width: 720px;
   margin: 0 auto;
-  padding: var(--spacing-lg) var(--spacing-lg);
 }
 
 .article-tags {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
-}
-
-.tag-label {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  gap: 10px;
+  margin-bottom: 24px;
 }
 
 .tag {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  padding: 8px 16px;
+  background: #f5f5f5;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
-.tag::before {
-  content: '#';
-  color: var(--color-text-muted);
+[data-theme="dark"] .tag {
+  background: #222;
+  color: #999;
+}
+
+.tag:hover {
+  background: #667eea;
+  color: #fff;
 }
 
 .interactions {
   display: flex;
-  justify-content: center;
-  gap: var(--spacing-lg);
+  gap: 16px;
 }
 
 .interaction-btn {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-xl);
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-md);
+  gap: 8px;
+  padding: 12px 20px;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  border-radius: 10px;
   cursor: pointer;
-  transition: opacity var(--transition-fast);
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  transition: all 0.2s ease;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .interaction-btn {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #999;
 }
 
 .interaction-btn:hover {
-  opacity: 0.7;
+  border-color: #667eea;
+  color: #667eea;
 }
 
 .interaction-btn.active {
-  color: var(--color-warning);
+  background: #667eea;
+  border-color: #667eea;
+  color: #fff;
+}
+
+.interaction-btn .count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
 }
 
 .interaction-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.interaction-btn span:first-child {
-  font-size: var(--text-xl);
+/* ==================== Comments Section ==================== */
+.comments-section {
+  padding: 64px 24px;
+  background: #fafbfc;
 }
 
-/* ==================== 评论区 ==================== */
-.comments-section {
-  max-width: var(--article-max-width);
+[data-theme="dark"] .comments-section {
+  background: #0a0a0a;
+}
+
+.comments-container {
+  max-width: 720px;
   margin: 0 auto;
-  padding: var(--spacing-2xl) var(--spacing-lg);
 }
 
 .comments-title {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--color-text);
-  margin-bottom: var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 32px;
 }
 
-/* ==================== 评论表单 ==================== */
+[data-theme="dark"] .comments-title {
+  color: #fff;
+}
+
+/* ==================== Comment Form ==================== */
 .comment-form {
-  margin-bottom: var(--spacing-2xl);
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+[data-theme="dark"] .comment-form {
+  background: #1a1a1a;
+  border-color: #333;
 }
 
 .form-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.form-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .form-label {
-  font-weight: var(--font-medium);
-  color: var(--color-text);
-  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 15px;
+}
+
+[data-theme="dark"] .form-label {
+  color: #fff;
+}
+
+textarea {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #1a1a1a;
+  background: #fafbfc;
+  resize: vertical;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] textarea {
+  border-color: #333;
+  background: #0a0a0a;
+  color: #fff;
+}
+
+textarea:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+textarea::placeholder {
+  color: #999;
 }
 
 .form-footer {
   display: flex;
   justify-content: flex-end;
-  margin-top: var(--spacing-md);
+  margin-top: 16px;
+}
+
+.submit-btn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-btn:hover {
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .login-hint {
   text-align: center;
-  padding: var(--spacing-2xl);
-  background: var(--color-bg-subtle);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-2xl);
+  padding: 40px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  margin-bottom: 32px;
+}
+
+[data-theme="dark"] .login-hint {
+  background: #1a1a1a;
+  border-color: #333;
 }
 
 .login-hint p {
-  color: var(--color-text-muted);
-  margin-bottom: var(--spacing-md);
+  color: #666;
+  margin-bottom: 16px;
+  font-size: 15px;
 }
 
-/* ==================== 评论列表 ==================== */
+.login-btn {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-btn:hover {
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+/* ==================== Comment List ==================== */
 .comments-list {
   display: flex;
   flex-direction: column;
 }
 
 .comment-item {
-  padding: var(--spacing-lg) 0;
-  border-bottom: 1px solid var(--color-border-light);
+  padding: 24px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+[data-theme="dark"] .comment-item {
+  border-color: #222;
 }
 
 .comment-item:last-child {
@@ -582,53 +859,123 @@ onMounted(() => {
 .comment-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.comment-avatar {
+  width: 40px;
+  height: 40px;
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .comment-avatar {
+  background: #222;
+  color: #999;
 }
 
 .comment-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex: 1;
 }
 
 .comment-author {
-  font-weight: var(--font-medium);
-  font-size: var(--text-sm);
-  color: var(--color-text);
+  display: block;
+  font-weight: 600;
+  font-size: 15px;
+  color: #1a1a1a;
+}
+
+[data-theme="dark"] .comment-author {
+  color: #fff;
 }
 
 .comment-time {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-}
-
-.comment-body {
-  color: var(--color-text-secondary);
-  line-height: var(--leading-normal);
-  font-size: var(--text-sm);
+  font-size: 13px;
+  color: #999;
 }
 
 .comment-status {
-  margin-top: var(--spacing-sm);
-  font-size: var(--text-xs);
-  color: var(--color-warning);
+  padding: 4px 10px;
+  background: #fff3cd;
+  color: #856404;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.comment-body {
+  color: #444;
+  line-height: 1.6;
+  font-size: 15px;
+  padding-left: 52px;
+}
+
+[data-theme="dark"] .comment-body {
+  color: #ccc;
 }
 
 .empty-comments {
   text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--color-text-muted);
+  padding: 60px 24px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
 }
 
-/* ==================== 响应式 ==================== */
+[data-theme="dark"] .empty-comments {
+  background: #1a1a1a;
+  border-color: #333;
+}
+
+.empty-comments .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-comments p {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 8px;
+}
+
+[data-theme="dark"] .empty-comments p {
+  color: #fff;
+}
+
+.empty-comments span {
+  font-size: 14px;
+  color: #999;
+}
+
+/* ==================== Animations ==================== */
+.comment-enter-active,
+.comment-leave-active {
+  transition: all 0.3s ease;
+}
+
+.comment-enter-from,
+.comment-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* ==================== Responsive ==================== */
 @media (max-width: 768px) {
-  .hero-content {
-    padding: var(--spacing-3xl) var(--spacing-md) var(--spacing-xl);
+  .article-hero {
+    padding: 60px 20px 40px;
   }
 
   .article-title {
     font-size: 32px;
+    letter-spacing: -1px;
   }
 
   .article-meta {
@@ -636,27 +983,20 @@ onMounted(() => {
   }
 
   .body-content {
-    padding: var(--spacing-lg);
+    font-size: 16px;
   }
 
   .interactions {
-    flex-wrap: wrap;
+    flex-direction: column;
   }
 
   .interaction-btn {
-    flex: 1;
-    min-width: 80px;
-  }
-}
-
-@media (max-width: 480px) {
-  .article-title {
-    font-size: var(--text-xl);
+    justify-content: center;
   }
 
-  .author-info {
-    flex-direction: column;
-    align-items: flex-start;
+  .comment-body {
+    padding-left: 0;
+    margin-top: 12px;
   }
 }
 </style>

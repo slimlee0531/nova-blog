@@ -33,20 +33,27 @@ const toggleMobileMenu = () => {
     <header class="header">
       <div class="header-container">
         <router-link to="/" class="logo">
-          <div class="logo-mark">N</div>
+          <div class="logo-icon">
+            <span>N</span>
+          </div>
           <span class="logo-text">NovaBlog</span>
         </router-link>
 
         <nav class="nav" :class="{ open: mobileMenuOpen }">
           <router-link to="/" class="nav-item" @click="mobileMenuOpen = false">首页</router-link>
           <router-link v-if="userStore.token" to="/bookmarks" class="nav-item" @click="mobileMenuOpen = false">收藏</router-link>
-          <a class="nav-item" href="https://github.com" target="_blank">GitHub</a>
+          <a class="nav-item" href="https://github.com/slimlee0531/novaBlog" target="_blank">GitHub</a>
         </nav>
 
         <div class="header-actions">
           <ThemeToggle />
           <template v-if="userStore.token">
-            <router-link to="/write" class="btn-text">写文章</router-link>
+            <router-link to="/write" class="write-btn">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M11 1L15 5L6 14H2V10L11 1Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>写文章</span>
+            </router-link>
             <el-dropdown trigger="click">
               <button class="avatar-btn">
                 <div class="avatar">
@@ -55,19 +62,22 @@ const toggleMobileMenu = () => {
               </button>
               <template #dropdown>
                 <el-dropdown-menu>
+                  <el-dropdown-item @click="router.push('/bookmarks')">
+                    ⭐ 我的收藏
+                  </el-dropdown-item>
                   <el-dropdown-item @click="router.push('/admin')">
-                    管理后台
+                    ⚙️ 管理后台
                   </el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">
-                    退出登录
+                    🚪 退出登录
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
           </template>
           <template v-else>
-            <router-link to="/login" class="btn-text">登录</router-link>
-            <router-link to="/register" class="btn-primary">注册</router-link>
+            <router-link to="/login" class="login-btn">登录</router-link>
+            <router-link to="/register" class="register-btn">注册</router-link>
           </template>
 
           <button class="menu-btn" @click="toggleMobileMenu">
@@ -94,7 +104,9 @@ const toggleMobileMenu = () => {
       <div class="footer-container">
         <div class="footer-content">
           <div class="footer-brand">
-            <div class="logo-mark small">N</div>
+            <div class="footer-logo">
+              <span>N</span>
+            </div>
             <span>NovaBlog</span>
           </div>
           <p class="footer-copy">© 2026 NovaBlog. Crafted with care.</p>
@@ -112,7 +124,11 @@ const toggleMobileMenu = () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--color-surface);
+  background: #fff;
+}
+
+[data-theme="dark"] .app-layout {
+  background: #111;
 }
 
 /* ==================== Header ==================== */
@@ -120,22 +136,22 @@ const toggleMobileMenu = () => {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid #f0f0f0;
 }
 
 [data-theme="dark"] .header {
-  background: rgba(30, 30, 30, 0.85);
-  border-bottom-color: var(--color-border);
+  background: rgba(17, 17, 17, 0.9);
+  border-bottom-color: #222;
 }
 
 .header-container {
-  max-width: var(--content-max);
+  max-width: 1200px;
   margin: 0 auto;
-  height: var(--header-height);
-  padding: 0 var(--space-6);
+  height: 72px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -147,37 +163,34 @@ const toggleMobileMenu = () => {
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  color: var(--color-text);
+  color: #1a1a1a;
+}
+
+[data-theme="dark"] .logo {
+  color: #fff;
 }
 
 .logo:hover {
   opacity: 0.8;
 }
 
-.logo-mark {
-  width: 32px;
-  height: 32px;
-  background: var(--color-text);
-  color: var(--color-surface);
-  border-radius: var(--radius-sm);
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-}
-
-.logo-mark.small {
-  width: 24px;
-  height: 24px;
-  font-size: 12px;
-  border-radius: 6px;
+  font-weight: 800;
+  font-size: 18px;
 }
 
 .logo-text {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 /* ==================== Navigation ==================== */
@@ -188,60 +201,100 @@ const toggleMobileMenu = () => {
 }
 
 .nav-item {
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 10px 18px;
+  font-size: 15px;
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: #666;
   text-decoration: none;
-  border-radius: var(--radius-full);
-  transition: all var(--duration-fast) var(--ease-out);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .nav-item {
+  color: #999;
 }
 
 .nav-item:hover {
-  color: var(--color-text);
-  background: var(--color-surface-container);
+  color: #1a1a1a;
+  background: #f5f5f5;
+}
+
+[data-theme="dark"] .nav-item:hover {
+  color: #fff;
+  background: #222;
 }
 
 .nav-item.router-link-active {
-  color: var(--color-primary);
+  color: #667eea;
 }
 
 /* ==================== Actions ==================== */
 .header-actions {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.write-btn {
+  display: flex;
+  align-items: center;
   gap: 8px;
-}
-
-.btn-text {
-  padding: 8px 16px;
+  padding: 10px 20px;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   text-decoration: none;
-  border-radius: var(--radius-full);
-  transition: all var(--duration-fast) var(--ease-out);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
-.btn-text:hover {
-  color: var(--color-text);
-  background: var(--color-surface-container);
+.write-btn:hover {
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
 }
 
-.btn-primary {
-  padding: 8px 20px;
+.login-btn {
+  padding: 10px 20px;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-on-primary);
-  background: var(--color-primary);
+  font-weight: 600;
+  color: #1a1a1a;
   text-decoration: none;
-  border-radius: var(--radius-full);
-  transition: all var(--duration-fast) var(--ease-out);
+  border-radius: 10px;
+  transition: all 0.2s ease;
 }
 
-.btn-primary:hover {
-  background: var(--color-primary-hover);
-  box-shadow: var(--shadow-md);
+[data-theme="dark"] .login-btn {
+  color: #fff;
+}
+
+.login-btn:hover {
+  background: #f5f5f5;
+}
+
+[data-theme="dark"] .login-btn:hover {
+  background: #222;
+}
+
+.register-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #1a1a1a;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .register-btn {
+  background: #fff;
+  color: #111;
+}
+
+.register-btn:hover {
+  opacity: 0.9;
 }
 
 .avatar-btn {
@@ -252,22 +305,21 @@ const toggleMobileMenu = () => {
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
-  background: var(--color-surface-container);
-  color: var(--color-text);
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all var(--duration-fast) var(--ease-out);
+  font-size: 16px;
+  font-weight: 700;
+  transition: all 0.2s ease;
 }
 
 .avatar-btn:hover .avatar {
-  background: var(--color-surface-hover);
-  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
 /* ==================== Mobile Menu ==================== */
@@ -277,35 +329,42 @@ const toggleMobileMenu = () => {
   background: none;
   border: none;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
 }
 
 .menu-btn:hover {
-  background: var(--color-surface-container);
+  background: #f5f5f5;
+}
+
+[data-theme="dark"] .menu-btn:hover {
+  background: #222;
 }
 
 .menu-icon {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  width: 20px;
+  gap: 6px;
+  width: 22px;
 }
 
 .menu-icon span {
   display: block;
   height: 2px;
-  background: var(--color-text);
+  background: #1a1a1a;
   border-radius: 1px;
-  transition: all var(--duration-normal) var(--ease-out);
-  transform-origin: center;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .menu-icon span {
+  background: #fff;
 }
 
 .menu-icon.active span:first-child {
-  transform: translateY(3.5px) rotate(45deg);
+  transform: translateY(4px) rotate(45deg);
 }
 
 .menu-icon.active span:last-child {
-  transform: translateY(-3.5px) rotate(-45deg);
+  transform: translateY(-4px) rotate(-45deg);
 }
 
 /* ==================== Main ==================== */
@@ -315,15 +374,19 @@ const toggleMobileMenu = () => {
 
 /* ==================== Footer ==================== */
 .footer {
-  border-top: 1px solid var(--color-border-subtle);
-  padding: var(--space-8) 0;
-  margin-top: var(--space-20);
+  border-top: 1px solid #f0f0f0;
+  padding: 40px 0;
+  margin-top: auto;
+}
+
+[data-theme="dark"] .footer {
+  border-color: #222;
 }
 
 .footer-container {
-  max-width: var(--content-max);
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--space-6);
+  padding: 0 24px;
 }
 
 .footer-content {
@@ -335,15 +398,32 @@ const toggleMobileMenu = () => {
 .footer-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+[data-theme="dark"] .footer-brand {
+  color: #fff;
+}
+
+.footer-logo {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
 }
 
 .footer-copy {
-  font-size: 13px;
-  color: var(--color-text-tertiary);
+  font-size: 14px;
+  color: #999;
 }
 
 /* ==================== Responsive ==================== */
@@ -351,16 +431,21 @@ const toggleMobileMenu = () => {
   .nav {
     display: none;
     position: fixed;
-    top: var(--header-height);
+    top: 72px;
     left: 0;
     right: 0;
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border-subtle);
-    padding: var(--space-2);
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 16px;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     z-index: 99;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  [data-theme="dark"] .nav {
+    background: #111;
+    border-color: #222;
   }
 
   .nav.open {
@@ -369,8 +454,8 @@ const toggleMobileMenu = () => {
 
   .nav-item {
     width: 100%;
-    padding: 12px 16px;
-    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    border-radius: 10px;
     text-align: center;
   }
 
@@ -380,14 +465,15 @@ const toggleMobileMenu = () => {
     justify-content: center;
   }
 
-  .btn-text,
-  .btn-primary {
+  .write-btn,
+  .login-btn,
+  .register-btn {
     display: none;
   }
 
   .footer-content {
     flex-direction: column;
-    gap: var(--space-4);
+    gap: 16px;
     text-align: center;
   }
 }
@@ -395,7 +481,7 @@ const toggleMobileMenu = () => {
 /* ==================== Page Transition ==================== */
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .page-enter-from {
