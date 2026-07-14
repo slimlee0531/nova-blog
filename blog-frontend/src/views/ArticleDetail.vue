@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { commentApi } from '@/api/comment'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 import { formatDate } from '@/utils/format'
+import { renderMarkdown } from '@/utils/markdown'
 import type { Article, Comment } from '@/types'
 
 const route = useRoute()
@@ -13,6 +14,12 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const article = ref<Article | null>(null)
+
+// Markdown 渲染
+const renderedContent = computed(() => {
+  if (!article.value?.content) return ''
+  return renderMarkdown(article.value.content)
+})
 const comments = ref<Comment[]>([])
 const loading = ref(false)
 const commentContent = ref('')
@@ -128,7 +135,7 @@ onMounted(() => {
 
       <!-- 文章正文 -->
       <div class="article-body container">
-        <div class="body-content" v-html="article.content"></div>
+        <div class="body-content" v-html="renderedContent"></div>
       </div>
 
       <!-- 文章底部 -->
