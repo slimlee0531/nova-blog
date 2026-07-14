@@ -28,6 +28,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/bookmarks',
+    name: 'Bookmarks',
+    component: () => import('@/views/Bookmarks.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/admin/AdminLayout.vue'),

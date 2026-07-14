@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { commentApi } from '@/api/comment'
+import { bookmarkApi } from '@/api/bookmark'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 import { formatDate } from '@/utils/format'
@@ -24,6 +25,8 @@ const comments = ref<Comment[]>([])
 const loading = ref(false)
 const commentContent = ref('')
 const submitting = ref(false)
+const isBookmarked = ref(false)
+const bookmarkLoading = ref(false)
 
 const fetchArticle = async () => {
   loading.value = true
@@ -33,6 +36,7 @@ const fetchArticle = async () => {
     if (res.code === 200) {
       article.value = res.data
       fetchComments()
+      checkBookmarkStatus()
     } else {
       ElMessage.error('文章不存在')
       router.push('/')
@@ -54,6 +58,42 @@ const fetchComments = async () => {
     }
   } catch (e) {
     console.error(e)
+  }
+}
+
+const checkBookmarkStatus = async () => {
+  if (!article.value || !userStore.token) return
+  try {
+    const res = await bookmarkApi.checkBookmark(article.value.id)
+    if (res.code === 200) {
+      isBookmarked.value = res.data.bookmarked
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const toggleBookmark = async () => {
+  if (!userStore.token) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+  if (!article.value || bookmarkLoading.value) return
+
+  bookmarkLoading.value = true
+  try {
+    const res = await bookmarkApi.toggleBookmark(article.value.id)
+    if (res.code === 200) {
+      isBookmarked.value = res.data.bookmarked
+      article.value.bookmarkCount = res.data.bookmarkCount
+      ElMessage.success(isBookmarked.value ? '收藏成功' : '已取消收藏')
+    }
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('操作失败')
+  } finally {
+    bookmarkLoading.value = false
   }
 }
 
@@ -149,9 +189,14 @@ onMounted(() => {
 
           <!-- 互动按钮 -->
           <div class="interactions">
-            <button class="interaction-btn">
-              <span>⭐</span>
-              <span>收藏</span>
+            <button
+              class="interaction-btn"
+              :class="{ active: isBookmarked }"
+              @click="toggleBookmark"
+              :disabled="bookmarkLoading"
+            >
+              <span>{{ isBookmarked ? '★' : '☆' }}</span>
+              <span>{{ isBookmarked ? '已收藏' : '收藏' }} {{ article.bookmarkCount || '' }}</span>
             </button>
             <button class="interaction-btn">
               <span>💬</span>
@@ -453,6 +498,15 @@ onMounted(() => {
 
 .interaction-btn:hover {
   opacity: 0.7;
+}
+
+.interaction-btn.active {
+  color: var(--color-warning);
+}
+
+.interaction-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .interaction-btn span:first-child {

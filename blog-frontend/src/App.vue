@@ -39,6 +39,7 @@ const toggleMobileMenu = () => {
 
         <nav class="nav" :class="{ open: mobileMenuOpen }">
           <router-link to="/" class="nav-item" @click="mobileMenuOpen = false">首页</router-link>
+          <router-link v-if="userStore.token" to="/bookmarks" class="nav-item" @click="mobileMenuOpen = false">收藏</router-link>
           <a class="nav-item" href="https://github.com" target="_blank">GitHub</a>
         </nav>
 
