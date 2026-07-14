@@ -79,6 +79,15 @@ const closeMobileMenu = () => {
           <span class="nav-icon">🏷️</span>
           <span class="nav-text" v-if="!sidebarCollapsed">标签管理</span>
         </router-link>
+        <router-link
+          to="/admin/comments"
+          class="nav-item"
+          :class="{ active: $route.path === '/admin/comments' }"
+          @click="closeMobileMenu"
+        >
+          <span class="nav-icon">💬</span>
+          <span class="nav-text" v-if="!sidebarCollapsed">评论管理</span>
+        </router-link>
       </nav>
 
       <div class="sidebar-footer">

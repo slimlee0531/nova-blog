@@ -57,6 +57,11 @@ const routes = [
         path: 'tags',
         name: 'TagList',
         component: () => import('@/views/admin/TagList.vue')
+      },
+      {
+        path: 'comments',
+        name: 'CommentList',
+        component: () => import('@/views/admin/CommentList.vue')
       }
     ]
   }

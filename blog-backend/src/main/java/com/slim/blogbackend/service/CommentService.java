@@ -1,6 +1,7 @@
 package com.slim.blogbackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.slim.blogbackend.dto.request.CommentCreateDTO;
 import com.slim.blogbackend.dto.response.CommentResponseDTO;
 import com.slim.blogbackend.entity.Article;
@@ -10,6 +11,7 @@ import com.slim.blogbackend.exception.BusinessException;
 import com.slim.blogbackend.mapper.ArticleMapper;
 import com.slim.blogbackend.mapper.CommentMapper;
 import com.slim.blogbackend.mapper.UserMapper;
+import com.slim.blogbackend.vo.PageResult;
 import com.slim.blogbackend.vo.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,6 +115,38 @@ public class CommentService {
         comment.setStatus(Comment.CommentStatus.APPROVED.name());
         commentMapper.updateById(comment);
         return Result.success();
+    }
+
+    @Transactional
+    public Result<Void> rejectComment(Long id) {
+        Comment comment = commentMapper.selectById(id);
+        if (comment == null) {
+            throw new BusinessException("评论不存在");
+        }
+        comment.setStatus(Comment.CommentStatus.REJECTED.name());
+        commentMapper.updateById(comment);
+        return Result.success();
+    }
+
+    public Result<PageResult<CommentResponseDTO>> adminGetComments(int page, int size, String status, Long articleId) {
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(Comment::getStatus, status);
+        }
+        if (articleId != null) {
+            wrapper.eq(Comment::getArticleId, articleId);
+        }
+
+        wrapper.orderByDesc(Comment::getCreatedAt);
+
+        Page<Comment> pageResult = commentMapper.selectPage(new Page<>(page, size), wrapper);
+
+        List<CommentResponseDTO> records = pageResult.getRecords().stream()
+                .map(this::toResponseDTO)
+                .toList();
+
+        return Result.success(PageResult.of(records, pageResult.getTotal(), page, size));
     }
 
     private CommentResponseDTO toResponseDTO(Comment comment) {
