@@ -112,19 +112,20 @@ const toggleMobileMenu = () => {
   flex-direction: column;
 }
 
-/* ==================== Header (Apple Style) ==================== */
+/* ==================== Header (Premium Style) ==================== */
 .app-header {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(251, 251, 253, 0.72);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--color-border-light);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 [data-theme="dark"] .app-header {
-  background: rgba(28, 28, 30, 0.8);
+  background: rgba(0, 0, 0, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .header-inner {
@@ -145,16 +146,30 @@ const toggleMobileMenu = () => {
 .logo {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 10px;
   text-decoration: none;
   color: var(--color-text);
   font-weight: var(--font-semibold);
-  font-size: var(--text-lg);
-  letter-spacing: -0.3px;
+  font-size: 18px;
+  letter-spacing: -0.4px;
+  transition: opacity var(--transition-fast);
+}
+
+.logo:hover {
+  opacity: 0.7;
 }
 
 .logo-icon {
-  font-size: 18px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .logo-text {
@@ -165,69 +180,89 @@ const toggleMobileMenu = () => {
 .header-nav {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: 4px;
 }
 
 .nav-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 8px 14px;
   color: var(--color-text-secondary);
   text-decoration: none;
-  font-size: var(--text-sm);
+  font-size: 14px;
   font-weight: var(--font-medium);
-  border-radius: var(--radius-sm);
-  transition: color var(--transition-fast);
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
 }
 
 .nav-link:hover {
   color: var(--color-text);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .nav-link:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .write-link {
   color: var(--color-primary);
 }
 
+.write-link:hover {
+  background: var(--color-primary-bg);
+}
+
 .register-btn {
   display: inline-flex;
   align-items: center;
-  padding: 6px 16px;
+  padding: 8px 20px;
   background: var(--color-primary);
   color: var(--color-text-inverse);
-  font-size: var(--text-sm);
+  font-size: 14px;
   font-weight: var(--font-medium);
   border-radius: var(--radius-full);
   text-decoration: none;
   transition: all var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(10, 132, 255, 0.3);
 }
 
 .register-btn:hover {
   background: var(--color-primary-dark);
+  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 /* ==================== Header 右侧 ==================== */
 .header-right {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 8px;
 }
 
 .user-avatar-btn {
   padding: 0;
   border-radius: var(--radius-full);
   overflow: hidden;
-  transition: opacity var(--transition-fast);
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .user-avatar-btn:hover {
-  opacity: 0.8;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 /* ==================== 移动端菜单 ==================== */
 .mobile-menu-btn {
   display: none;
-  padding: var(--spacing-sm);
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .hamburger {
@@ -262,11 +297,11 @@ const toggleMobileMenu = () => {
   flex: 1;
 }
 
-/* ==================== Footer (Apple Style) ==================== */
+/* ==================== Footer (Premium Style) ==================== */
 .app-footer {
   background: var(--color-bg-subtle);
   border-top: 1px solid var(--color-border-light);
-  padding: var(--spacing-xl) 0;
+  padding: var(--spacing-2xl) 0;
   margin-top: var(--spacing-4xl);
 }
 
@@ -276,7 +311,8 @@ const toggleMobileMenu = () => {
   padding: 0 var(--spacing-lg);
   text-align: center;
   color: var(--color-text-muted);
-  font-size: var(--text-xs);
+  font-size: 13px;
+  letter-spacing: 0.2px;
 }
 
 /* ==================== 响应式 ==================== */
@@ -287,18 +323,21 @@ const toggleMobileMenu = () => {
     top: var(--header-height);
     left: 0;
     right: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--color-border-light);
+    background: rgba(251, 251, 253, 0.95);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     padding: var(--spacing-sm);
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: 4px;
     z-index: calc(var(--z-header) - 1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   }
 
   [data-theme="dark"] .header-nav {
-    background: rgba(28, 28, 30, 0.95);
+    background: rgba(0, 0, 0, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
   }
 
   .header-nav.open {
@@ -307,8 +346,9 @@ const toggleMobileMenu = () => {
 
   .header-nav .nav-link {
     width: 100%;
-    padding: var(--spacing-md);
+    padding: 14px;
     justify-content: center;
+    border-radius: var(--radius-md);
   }
 
   .mobile-menu-btn {

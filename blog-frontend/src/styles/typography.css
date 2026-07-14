@@ -1,6 +1,5 @@
 /**
- * NovaBlog Typography - Apple Style
- * 排版系统：标题、段落、代码、引用等
+ * NovaBlog Typography - Premium Style
  */
 
 /* ==================== 标题 ==================== */
@@ -30,11 +29,11 @@ p {
 a {
   color: var(--color-primary);
   text-decoration: none;
-  transition: opacity var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 a:hover {
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 /* ==================== 列表 ==================== */
