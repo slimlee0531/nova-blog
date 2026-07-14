@@ -7,16 +7,18 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ==================== Element Plus 主题覆盖 ==================== */
+/* ==================== Element Plus 主题覆盖 (Apple Style) ==================== */
 :root {
-  /* 覆盖 Element Plus 主色为靛蓝 */
+  /* 覆盖 Element Plus 主色为 Apple Blue */
   --el-color-primary: var(--color-primary);
   --el-color-primary-light-3: var(--color-primary-light);
-  --el-color-primary-light-5: rgba(102, 126, 234, 0.5);
-  --el-color-primary-light-7: rgba(102, 126, 234, 0.3);
-  --el-color-primary-light-9: rgba(102, 126, 234, 0.1);
+  --el-color-primary-light-5: rgba(0, 113, 227, 0.5);
+  --el-color-primary-light-7: rgba(0, 113, 227, 0.3);
+  --el-color-primary-light-9: rgba(0, 113, 227, 0.1);
   --el-color-primary-dark-2: var(--color-primary-dark);
 
   /* 圆角统一 */
@@ -32,13 +34,6 @@
 }
 
 /* ==================== 工具类 ==================== */
-.text-gradient {
-  background: var(--color-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 .container {
   max-width: var(--content-max-width);
   margin: 0 auto;
@@ -48,38 +43,12 @@
 .card {
   background: var(--color-bg-card);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-light);
   transition: all var(--transition-base);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.card-hover {
-  transition: all var(--transition-base);
-  cursor: pointer;
-}
-
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-/* ==================== 按钮增强 ==================== */
-.btn-primary {
-  background: var(--color-gradient);
-  color: var(--color-text-inverse);
-  border: none;
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border-radius: var(--radius-full);
-  font-weight: var(--font-medium);
-  transition: all var(--transition-base);
-}
-
-.btn-primary:hover {
-  box-shadow: var(--shadow-primary);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ==================== 响应式工具 ==================== */

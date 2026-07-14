@@ -245,10 +245,10 @@ onMounted(() => {
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-text);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -261,16 +261,15 @@ onMounted(() => {
   margin-top: var(--spacing-md);
 }
 
-/* ==================== 文章头部 ==================== */
+/* ==================== 文章头部 (Apple Style) ==================== */
 .article-hero {
-  background: var(--color-bg-card);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
 }
 
 .hero-content {
   max-width: var(--article-max-width);
   margin: 0 auto;
-  padding: var(--spacing-3xl) 0 var(--spacing-2xl);
+  padding: var(--spacing-4xl) var(--spacing-lg) var(--spacing-2xl);
 }
 
 .article-meta {
@@ -281,12 +280,11 @@ onMounted(() => {
 }
 
 .category {
-  background: var(--color-gradient);
-  color: white;
-  padding: 4px 14px;
-  border-radius: var(--radius-full);
+  color: var(--color-primary);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .date,
@@ -296,11 +294,12 @@ onMounted(() => {
 }
 
 .article-title {
-  font-size: var(--text-4xl);
+  font-size: 48px;
   font-weight: var(--font-bold);
   color: var(--color-text);
   margin-bottom: var(--spacing-xl);
-  line-height: var(--leading-tight);
+  line-height: 1.1;
+  letter-spacing: -1px;
 }
 
 .author-info {
@@ -316,46 +315,42 @@ onMounted(() => {
 }
 
 .author-name {
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--color-text);
 }
 
 .author-bio {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
 
-/* ==================== 文章正文 ==================== */
+/* ==================== 文章正文 (Apple Style) ==================== */
 .article-body {
   max-width: var(--article-max-width);
   margin: 0 auto;
-  padding: var(--spacing-2xl) 0;
+  padding: var(--spacing-xl) var(--spacing-lg);
 }
 
 .body-content {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-2xl);
-  box-shadow: var(--shadow-sm);
   line-height: var(--leading-relaxed);
   color: var(--color-text-secondary);
   font-size: var(--text-base);
-  border: 1px solid var(--color-border);
 }
 
 .body-content :deep(h1),
 .body-content :deep(h2),
 .body-content :deep(h3) {
   color: var(--color-text);
-  margin-top: var(--spacing-xl);
+  margin-top: var(--spacing-2xl);
   margin-bottom: var(--spacing-md);
+  font-weight: var(--font-semibold);
 }
 
 .body-content :deep(h2) {
   font-size: var(--text-2xl);
   padding-bottom: var(--spacing-sm);
-  border-bottom: 2px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .body-content :deep(p) {
@@ -364,20 +359,21 @@ onMounted(() => {
 }
 
 .body-content :deep(code) {
-  background: var(--color-primary-bg);
-  color: var(--color-primary-dark);
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
   padding: 2px 6px;
   border-radius: var(--radius-xs);
   font-size: 0.9em;
 }
 
 .body-content :deep(pre) {
-  background: var(--color-text);
-  color: var(--color-text-inverse);
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
   overflow-x: auto;
   margin: var(--spacing-lg) 0;
+  border: 1px solid var(--color-border-light);
 }
 
 .body-content :deep(pre code) {
@@ -387,11 +383,10 @@ onMounted(() => {
 }
 
 .body-content :deep(blockquote) {
-  border-left: 4px solid var(--color-primary);
-  background: var(--color-primary-bg);
+  border-left: 3px solid var(--color-text-muted);
   padding: var(--spacing-md) var(--spacing-lg);
   margin: var(--spacing-lg) 0;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--color-text-secondary);
 }
 
 .body-content :deep(img) {
@@ -402,15 +397,14 @@ onMounted(() => {
 
 /* ==================== 文章底部 ==================== */
 .article-footer-section {
-  background: var(--color-bg-card);
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .footer-content {
   max-width: var(--article-max-width);
   margin: 0 auto;
-  padding: var(--spacing-lg) 0;
+  padding: var(--spacing-lg) var(--spacing-lg);
 }
 
 .article-tags {
@@ -423,14 +417,17 @@ onMounted(() => {
 
 .tag-label {
   color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 
 .tag {
-  background: var(--color-bg-subtle);
   color: var(--color-text-secondary);
-  padding: 4px 14px;
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
+}
+
+.tag::before {
+  content: '#';
+  color: var(--color-text-muted);
 }
 
 .interactions {
@@ -446,18 +443,16 @@ onMounted(() => {
   gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-xl);
   border: none;
-  background: var(--color-bg-subtle);
+  background: transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: opacity var(--transition-fast);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }
 
 .interaction-btn:hover {
-  background: var(--color-primary);
-  color: white;
-  transform: translateY(-2px);
+  opacity: 0.7;
 }
 
 .interaction-btn span:first-child {
@@ -468,24 +463,18 @@ onMounted(() => {
 .comments-section {
   max-width: var(--article-max-width);
   margin: 0 auto;
-  padding: var(--spacing-2xl) 0;
+  padding: var(--spacing-2xl) var(--spacing-lg);
 }
 
 .comments-title {
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--color-text);
   margin-bottom: var(--spacing-xl);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
 }
 
 /* ==================== 评论表单 ==================== */
 .comment-form {
-  background: var(--color-bg-subtle);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
   margin-bottom: var(--spacing-2xl);
 }
 
@@ -499,6 +488,7 @@ onMounted(() => {
 .form-label {
   font-weight: var(--font-medium);
   color: var(--color-text);
+  font-size: var(--text-sm);
 }
 
 .form-footer {
@@ -511,7 +501,7 @@ onMounted(() => {
   text-align: center;
   padding: var(--spacing-2xl);
   background: var(--color-bg-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   margin-bottom: var(--spacing-2xl);
 }
 
@@ -524,21 +514,22 @@ onMounted(() => {
 .comments-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
 }
 
 .comment-item {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-lg) 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.comment-item:last-child {
+  border-bottom: none;
 }
 
 .comment-header {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .comment-info {
@@ -549,6 +540,7 @@ onMounted(() => {
 
 .comment-author {
   font-weight: var(--font-medium);
+  font-size: var(--text-sm);
   color: var(--color-text);
 }
 
@@ -560,6 +552,7 @@ onMounted(() => {
 .comment-body {
   color: var(--color-text-secondary);
   line-height: var(--leading-normal);
+  font-size: var(--text-sm);
 }
 
 .comment-status {
@@ -577,11 +570,11 @@ onMounted(() => {
 /* ==================== 响应式 ==================== */
 @media (max-width: 768px) {
   .hero-content {
-    padding: var(--spacing-2xl) 0 var(--spacing-xl);
+    padding: var(--spacing-3xl) var(--spacing-md) var(--spacing-xl);
   }
 
   .article-title {
-    font-size: var(--text-2xl);
+    font-size: 32px;
   }
 
   .article-meta {

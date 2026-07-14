@@ -7,7 +7,7 @@ export const commentApi = {
   },
   createComment(data: CommentCreateParams) {
     return request.post('/api/comments', data) as Promise<Result<Comment>>
-  }
+  },
 
   // 管理接口
   adminGetComments(params: { page: number; size: number; status?: string; articleId?: number }) {
