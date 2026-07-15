@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { categoryApi } from '@/api/category'
@@ -7,7 +7,8 @@ import { tagApi } from '@/api/tag'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 import { renderMarkdown } from '@/utils/markdown'
-import type { Category, Tag, ArticleCreateParams } from '@/types'
+import AiSidebar from '@/components/ai/AiSidebar.vue'
+import type { Category, Tag, ArticleCreateParams, AiTaskType, AiGenerationResult } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -23,8 +24,67 @@ const form = ref<ArticleCreateParams>({
   tags: []
 })
 
+const selectedText = ref('')
+const contentRef = ref<HTMLTextAreaElement | null>(null)
+
+const undoStack = ref<{ taskType: AiTaskType; field: 'title' | 'summary' | 'content' | 'tags'; oldValue: any; newValue: any }[]>([])
+const MAX_UNDO_STACK = 10
+
+const pushUndo = (taskType: AiTaskType, field: 'title' | 'summary' | 'content' | 'tags', oldValue: any, newValue: any) => {
+  undoStack.value.push({ taskType, field, oldValue, newValue })
+  if (undoStack.value.length > MAX_UNDO_STACK) {
+    undoStack.value.shift()
+  }
+}
+
+const undoLastAction = () => {
+  if (undoStack.value.length === 0) {
+    ElMessage.warning('没有可撤销的操作')
+    return
+  }
+  const last = undoStack.value.pop()!
+  switch (last.field) {
+    case 'title':
+      form.value.title = last.oldValue
+      break
+    case 'summary':
+      form.value.summary = last.oldValue
+      break
+    case 'content':
+      form.value.content = last.oldValue
+      break
+    case 'tags':
+      form.value.tags = last.oldValue
+      break
+  }
+  ElMessage.success(`已撤销「${last.taskType}」操作`)
+}
+
 const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
+
+const handleSelectionChange = () => {
+  if (contentRef.value && window.getSelection) {
+    const selection = window.getSelection()
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0)
+      const container = range.commonAncestorContainer
+      if (contentRef.value.contains(container)) {
+        selectedText.value = selection.toString().trim()
+        return
+      }
+    }
+  }
+  selectedText.value = ''
+}
+
+onMounted(() => {
+  document.addEventListener('selectionchange', handleSelectionChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('selectionchange', handleSelectionChange)
+})
 
 // Markdown 预览
 const renderedContent = computed(() => {
@@ -50,6 +110,98 @@ const fetchTags = async () => {
     }
   } catch (e) {
     console.error(e)
+  }
+}
+
+const applyAiResult = (payload: { taskType: AiTaskType; result: AiGenerationResult; fullText: string; action: 'replace' | 'append' | 'merge' }) => {
+  const { taskType, fullText, action } = payload
+  switch (taskType) {
+    case 'TITLE': {
+      const line = fullText.split(/\r?\n/).find(l => l.trim().length > 0)
+      if (!line) {
+        ElMessage.warning('未找到有效标题')
+        return
+      }
+      const cleanTitle = line.replace(/^\d+[\.、)\s]+/, '').replace(/^["'“”]+|["'“”]+$/g, '').trim()
+      const oldValue = form.value.title
+      if (action === 'replace') {
+        form.value.title = cleanTitle
+        ElMessage.success('已覆盖标题')
+      } else {
+        form.value.title = (form.value.title || '') + ' ' + cleanTitle
+        ElMessage.success('已追加到标题')
+      }
+      pushUndo(taskType, 'title', oldValue, form.value.title)
+      break
+    }
+    case 'SUMMARY': {
+      const cleanSummary = fullText.trim()
+      const oldValue = form.value.summary
+      if (action === 'replace') {
+        form.value.summary = cleanSummary
+        ElMessage.success('已覆盖摘要')
+      } else {
+        form.value.summary = (form.value.summary || '') + (form.value.summary ? '\n' : '') + cleanSummary
+        ElMessage.success('已追加到摘要')
+      }
+      pushUndo(taskType, 'summary', oldValue, form.value.summary)
+      break
+    }
+    case 'TAG': {
+      const extracted = fullText
+        .split(/[,，、\s|\/;；]+/)
+        .map(s => s.replace(/^[-•·\d\.\)\s]+/, '').trim())
+        .filter(s => s.length > 0)
+      if (!extracted.length) {
+        ElMessage.warning('未提取到有效标签')
+        return
+      }
+      const oldValue = [...(form.value.tags ?? [])]
+      if (action === 'replace') {
+        form.value.tags = extracted
+        ElMessage.success(`已替换为 ${extracted.length} 个标签`)
+      } else if (action === 'append') {
+        form.value.tags = [...(form.value.tags ?? []), ...extracted]
+        ElMessage.success(`已追加 ${extracted.length} 个标签`)
+      } else {
+        form.value.tags = Array.from(new Set([...(form.value.tags ?? []), ...extracted]))
+        const added = extracted.filter(t => !form.value.tags.includes(t)).length
+        ElMessage.success(`已智能合并，新增 ${added} 个标签`)
+      }
+      pushUndo(taskType, 'tags', oldValue, form.value.tags)
+      break
+    }
+    case 'SEO_META': {
+      const m = fullText.match(/Title[:：]\s*([^\n]+)/i)
+      const d = fullText.match(/Description[:：]\s*([^\n]+)/i)
+      if (m?.[1]) {
+        pushUndo(taskType, 'title', form.value.title, m[1].trim())
+        form.value.metaTitle = m[1].trim()
+      }
+      if (d?.[1]) {
+        pushUndo(taskType, 'summary', form.value.summary, d[1].trim())
+        form.value.metaDescription = d[1].trim()
+      }
+      ElMessage.success('已解析并应用 SEO')
+      break
+    }
+    case 'POLISH':
+    case 'REPHRASE':
+    case 'CONTINUE':
+    case 'PROOFREAD': {
+      const oldValue = form.value.content
+      if (action === 'append') {
+        form.value.content = (form.value.content || '') + (form.value.content ? '\n\n' : '') + fullText
+        ElMessage.success('已追加到正文末尾')
+      } else {
+        form.value.content = fullText
+        ElMessage.success('已覆盖整篇文章')
+      }
+      pushUndo(taskType, 'content', oldValue, form.value.content)
+      break
+    }
+    default:
+      ElMessage.info(`该任务类型（${taskType}）请自行复制粘贴应用`)
   }
 }
 
@@ -92,120 +244,142 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="write-container">
-    <div class="write-header">
-      <h2>写文章</h2>
-      <div class="header-actions">
-        <el-button @click="router.back()">取消</el-button>
-        <el-button @click="handleSave('DRAFT')" :loading="saving">保存草稿</el-button>
-        <el-button type="primary" @click="handleSave('PUBLISHED')" :loading="saving">发布文章</el-button>
-      </div>
-    </div>
-
-    <div class="write-form">
-      <el-input
-        v-model="form.title"
-        placeholder="请输入文章标题"
-        class="title-input"
-        size="large"
-      />
-
-      <div class="form-row">
-        <el-select v-model="form.categoryId" placeholder="选择分类" clearable style="flex: 1;">
-          <el-option
-            v-for="cat in categories"
-            :key="cat.id"
-            :label="cat.name"
-            :value="cat.id"
-          />
-        </el-select>
-        <el-select
-          v-model="form.tags"
-          placeholder="选择标签（可输入添加新标签）"
-          multiple
-          filterable
-          allow-create
-          default-first-option
-          style="flex: 2;"
-        >
-          <el-option
-            v-for="tag in tags"
-            :key="tag.id"
-            :label="tag.name"
-            :value="tag.name"
-          />
-        </el-select>
-      </div>
-
-      <el-input
-        v-model="form.summary"
-        type="textarea"
-        :rows="2"
-        placeholder="文章摘要（可选）"
-        class="summary-input"
-      />
-
-      <!-- 编辑/预览切换 -->
-      <div class="editor-tabs">
-        <button
-          class="tab-btn"
-          :class="{ active: activeTab === 'edit' }"
-          @click="activeTab = 'edit'"
-        >
-          ✏️ 编辑
-        </button>
-        <button
-          class="tab-btn"
-          :class="{ active: activeTab === 'preview' }"
-          @click="activeTab = 'preview'"
-        >
-          👁️ 预览
-        </button>
-      </div>
-
-      <!-- 编辑区 -->
-      <div v-show="activeTab === 'edit'" class="editor-area">
-        <el-input
-          v-model="form.content"
-          type="textarea"
-          :rows="20"
-          placeholder="请输入文章内容（支持Markdown格式）"
-          class="content-input"
-        />
-      </div>
-
-      <!-- 预览区 -->
-      <div v-show="activeTab === 'preview'" class="preview-area">
-        <div v-if="form.content" class="markdown-body" v-html="renderedContent"></div>
-        <div v-else class="empty-preview">
-          <p>📝 暂无内容，在编辑区输入 Markdown 即可预览</p>
+  <div class="write-layout">
+    <div class="write-container">
+      <div class="write-header">
+        <h2>写文章</h2>
+        <div class="header-actions">
+          <el-button @click="undoLastAction" :disabled="undoStack.length === 0">撤销</el-button>
+          <el-button @click="router.back()">取消</el-button>
+          <el-button @click="handleSave('DRAFT')" :loading="saving">保存草稿</el-button>
+          <el-button type="primary" @click="handleSave('PUBLISHED')" :loading="saving">发布文章</el-button>
         </div>
       </div>
 
-      <div class="write-tips">
-        <el-alert
-          title="写作提示"
-          type="info"
-          :closable="false"
-          show-icon
-        >
-          <template #default>
-            <ul class="tips-list">
-              <li>支持Markdown格式</li>
-              <li>使用 # 标题，** 加粗**，* 斜体*</li>
-              <li>使用 ``` 代码块，> 引用</li>
-            </ul>
-          </template>
-        </el-alert>
+      <div class="write-form">
+        <el-input
+          v-model="form.title"
+          placeholder="请输入文章标题"
+          class="title-input"
+          size="large"
+        />
+
+        <div class="form-row">
+          <el-select v-model="form.categoryId" placeholder="选择分类" clearable style="flex: 1;">
+            <el-option
+              v-for="cat in categories"
+              :key="cat.id"
+              :label="cat.name"
+              :value="cat.id"
+            />
+          </el-select>
+          <el-select
+            v-model="form.tags"
+            placeholder="选择标签（可输入添加新标签）"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            style="flex: 2;"
+          >
+            <el-option
+              v-for="tag in tags"
+              :key="tag.id"
+              :label="tag.name"
+              :value="tag.name"
+            />
+          </el-select>
+        </div>
+
+        <el-input
+          v-model="form.summary"
+          type="textarea"
+          :rows="2"
+          placeholder="文章摘要（可选）"
+          class="summary-input"
+        />
+
+        <!-- 编辑/预览切换 -->
+        <div class="editor-tabs">
+          <button
+            class="tab-btn"
+            :class="{ active: activeTab === 'edit' }"
+            @click="activeTab = 'edit'"
+          >
+            ✏️ 编辑
+          </button>
+          <button
+            class="tab-btn"
+            :class="{ active: activeTab === 'preview' }"
+            @click="activeTab = 'preview'"
+          >
+            👁️ 预览
+          </button>
+        </div>
+
+        <!-- 编辑区 -->
+        <div v-show="activeTab === 'edit'" class="editor-area">
+          <el-input
+            v-model="form.content"
+            type="textarea"
+            :rows="20"
+            placeholder="请输入文章内容（支持Markdown格式）"
+            class="content-input"
+            ref="contentRef"
+          />
+        </div>
+
+        <!-- 预览区 -->
+        <div v-show="activeTab === 'preview'" class="preview-area">
+          <div v-if="form.content" class="markdown-body" v-html="renderedContent"></div>
+          <div v-else class="empty-preview">
+            <p>📝 暂无内容，在编辑区输入 Markdown 即可预览</p>
+          </div>
+        </div>
+
+        <div class="write-tips">
+          <el-alert
+            title="写作提示"
+            type="info"
+            :closable="false"
+            show-icon
+          >
+            <template #default>
+              <ul class="tips-list">
+                <li>支持Markdown格式</li>
+                <li>使用 # 标题，** 加粗**，* 斜体*</li>
+                <li>使用 ``` 代码块，> 引用</li>
+              </ul>
+            </template>
+          </el-alert>
+        </div>
       </div>
     </div>
+
+    <AiSidebar
+      :form="form"
+      :selected-text="selectedText"
+      @apply="applyAiResult"
+    />
   </div>
 </template>
 
 <style scoped>
-.write-container {
-  max-width: 900px;
+.write-layout {
+  width: 100%;
+  max-width: 1600px;
   margin: 0 auto;
+  display: flex;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-lg) 0;
+  align-items: flex-start;
+}
+
+.write-container {
+  flex: 1;
+  min-width: 0;
+  max-width: 1000px;
+  margin: 0;
   padding: var(--spacing-lg);
   min-height: calc(100vh - var(--header-height));
   background: var(--color-bg-card);
@@ -370,14 +544,6 @@ onMounted(() => {
   margin: var(--spacing-md) 0;
 }
 
-.markdown-body :deep(blockquote) {
-  border-left: 4px solid var(--color-primary);
-  background: var(--color-primary-bg);
-  padding: var(--spacing-md) var(--spacing-lg);
-  margin: var(--spacing-md) 0;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-}
-
 .empty-preview {
   display: flex;
   align-items: center;
@@ -395,19 +561,5 @@ onMounted(() => {
 
 .tips-list li {
   margin: var(--spacing-xs) 0;
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .write-header {
-    flex-direction: column;
-    gap: var(--spacing-md);
-    align-items: flex-start;
-  }
-
-  .header-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
 }
 </style>

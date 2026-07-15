@@ -1,17 +1,26 @@
-/**
- * Markdown 渲染工具
- */
 import { marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
+import hljs from 'highlight.js'
 
-// 配置 marked
+marked.use(markedHighlight({
+  langPrefix: 'hljs language-',
+  highlight(code: string, lang: string) {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return hljs.highlight(code, { language: lang }).value
+      } catch {
+        return hljs.highlightAuto(code).value
+      }
+    }
+    return hljs.highlightAuto(code).value
+  }
+}))
+
 marked.setOptions({
-  breaks: true,       // 支持换行符
-  gfm: true,          // 支持 GitHub Flavored Markdown
+  breaks: true,
+  gfm: true,
 })
 
-/**
- * 渲染 Markdown 为 HTML
- */
 export function renderMarkdown(content: string): string {
   if (!content) return ''
   const html = marked.parse(content) as string

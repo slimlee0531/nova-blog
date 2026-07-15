@@ -11,13 +11,15 @@
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
-    "vue": "^3.5.38",
-    "vue-router": "^4.4.0",
-    "pinia": "^2.2.0",
+    "@element-plus/icons-vue": "^2.3.0",
     "axios": "^1.7.0",
     "element-plus": "^2.8.0",
-    "@element-plus/icons-vue": "^2.3.0",
-    "marked": "^14.0.0"
+    "highlight.js": "^11.11.1",
+    "marked": "^14.0.0",
+    "marked-highlight": "^2.2.4",
+    "pinia": "^2.2.0",
+    "vue": "^3.5.38",
+    "vue-router": "^4.4.0"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
