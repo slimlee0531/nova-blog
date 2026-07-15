@@ -3,10 +3,11 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { categoryApi } from '@/api/category'
+import { tagApi } from '@/api/tag'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 import { renderMarkdown } from '@/utils/markdown'
-import type { Category, ArticleCreateParams } from '@/types'
+import type { Category, Tag, ArticleCreateParams } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -18,10 +19,12 @@ const form = ref<ArticleCreateParams>({
   content: '',
   categoryId: undefined,
   status: 'DRAFT',
-  summary: ''
+  summary: '',
+  tags: []
 })
 
 const categories = ref<Category[]>([])
+const tags = ref<Tag[]>([])
 
 // Markdown 预览
 const renderedContent = computed(() => {
@@ -33,6 +36,17 @@ const fetchCategories = async () => {
     const res = await categoryApi.getList()
     if (res.code === 200) {
       categories.value = res.data
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const fetchTags = async () => {
+  try {
+    const res = await tagApi.getList()
+    if (res.code === 200) {
+      tags.value = res.data
     }
   } catch (e) {
     console.error(e)
@@ -73,6 +87,7 @@ onMounted(() => {
     return
   }
   fetchCategories()
+  fetchTags()
 })
 </script>
 
@@ -96,12 +111,28 @@ onMounted(() => {
       />
 
       <div class="form-row">
-        <el-select v-model="form.categoryId" placeholder="选择分类" clearable>
+        <el-select v-model="form.categoryId" placeholder="选择分类" clearable style="flex: 1;">
           <el-option
             v-for="cat in categories"
             :key="cat.id"
             :label="cat.name"
             :value="cat.id"
+          />
+        </el-select>
+        <el-select
+          v-model="form.tags"
+          placeholder="选择标签（可输入添加新标签）"
+          multiple
+          filterable
+          allow-create
+          default-first-option
+          style="flex: 2;"
+        >
+          <el-option
+            v-for="tag in tags"
+            :key="tag.id"
+            :label="tag.name"
+            :value="tag.name"
           />
         </el-select>
       </div>

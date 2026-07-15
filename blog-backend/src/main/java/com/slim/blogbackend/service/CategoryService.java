@@ -1,8 +1,11 @@
 package com.slim.blogbackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.slim.blogbackend.entity.Article;
 import com.slim.blogbackend.entity.Category;
 import com.slim.blogbackend.exception.BusinessException;
+import com.slim.blogbackend.mapper.ArticleMapper;
 import com.slim.blogbackend.mapper.CategoryMapper;
 import com.slim.blogbackend.vo.Result;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +22,9 @@ public class CategoryService {
 
     @Autowired
     private CategoryMapper categoryMapper;
+
+    @Autowired
+    private ArticleMapper articleMapper;
 
     @Transactional
     public Result<Category> createCategory(Category category) {
@@ -61,6 +67,10 @@ public class CategoryService {
         if (category == null) {
             throw new BusinessException("分类不存在");
         }
+        LambdaUpdateWrapper<Article> aWrapper = new LambdaUpdateWrapper<>();
+        aWrapper.eq(Article::getCategoryId, id);
+        aWrapper.set(Article::getCategoryId, null);
+        articleMapper.update(null, aWrapper);
         categoryMapper.deleteById(id);
         return Result.success();
     }
@@ -69,6 +79,12 @@ public class CategoryService {
         LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Category::getSortOrder);
         List<Category> categories = categoryMapper.selectList(wrapper);
+        for (Category category : categories) {
+            LambdaQueryWrapper<Article> aWrapper = new LambdaQueryWrapper<>();
+            aWrapper.eq(Article::getCategoryId, category.getId());
+            long count = articleMapper.selectCount(aWrapper);
+            category.setArticleCount((int) count);
+        }
         return Result.success(categories);
     }
 

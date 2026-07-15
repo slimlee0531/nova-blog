@@ -52,6 +52,12 @@ export interface LoginResult {
 
 // ==================== 文章 ====================
 
+export interface TagInfo {
+  id: number
+  name: string
+  color?: string
+}
+
 export interface Article {
   id: number
   title: string
@@ -75,6 +81,7 @@ export interface Article {
   categoryName?: string
   featuredImage?: string
   tags?: string[]
+  tagInfos?: TagInfo[]
   publishedAt?: string
   createdAt: string
   updatedAt: string
@@ -150,4 +157,15 @@ export interface CommentCreateParams {
   articleId: number
   content: string
   parentId?: number
+}
+
+export interface DashboardStats {
+  totalArticles: number
+  publishedArticles: number
+  draftArticles: number
+  totalCategories: number
+  totalTags: number
+  totalViews: number
+  totalComments: number
+  totalBookmarks: number
 }

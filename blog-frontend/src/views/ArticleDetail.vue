@@ -211,8 +211,18 @@ onMounted(() => {
       <div class="article-footer">
         <div class="footer-container">
           <!-- 标签 -->
-          <div class="article-tags" v-if="article.tags?.length">
-            <span v-for="tag in article.tags" :key="tag" class="tag">#{{ tag }}</span>
+          <div class="article-tags" v-if="article.tagInfos?.length || article.tags?.length">
+            <template v-if="article.tagInfos?.length">
+              <span
+                v-for="tag in article.tagInfos"
+                :key="tag.id"
+                class="tag"
+                :style="tag.color ? { background: `${tag.color}18`, color: tag.color, borderColor: `${tag.color}40` } : {}"
+              >#{{ tag.name }}</span>
+            </template>
+            <template v-else>
+              <span v-for="tag in article.tags" :key="tag" class="tag">#{{ tag }}</span>
+            </template>
           </div>
 
           <!-- 互动按钮 -->
@@ -609,7 +619,9 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
+  border: 1px solid transparent;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 [data-theme="dark"] .tag {

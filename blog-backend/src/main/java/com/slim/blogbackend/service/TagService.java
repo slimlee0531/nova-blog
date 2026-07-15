@@ -1,8 +1,10 @@
 package com.slim.blogbackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.slim.blogbackend.entity.ArticleTag;
 import com.slim.blogbackend.entity.Tag;
 import com.slim.blogbackend.exception.BusinessException;
+import com.slim.blogbackend.mapper.ArticleTagMapper;
 import com.slim.blogbackend.mapper.TagMapper;
 import com.slim.blogbackend.vo.Result;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,9 @@ public class TagService {
 
     @Autowired
     private TagMapper tagMapper;
+
+    @Autowired
+    private ArticleTagMapper articleTagMapper;
 
     @Transactional
     public Result<Tag> createTag(Tag tag) {
@@ -64,14 +69,23 @@ public class TagService {
         if (tag == null) {
             throw new BusinessException("标签不存在");
         }
+        LambdaQueryWrapper<ArticleTag> atWrapper = new LambdaQueryWrapper<>();
+        atWrapper.eq(ArticleTag::getTagId, id);
+        articleTagMapper.delete(atWrapper);
         tagMapper.deleteById(id);
         return Result.success();
     }
 
     public Result<List<Tag>> getTagList() {
         LambdaQueryWrapper<Tag> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(Tag::getArticleCount);
         List<Tag> tags = tagMapper.selectList(wrapper);
+        for (Tag tag : tags) {
+            LambdaQueryWrapper<ArticleTag> atWrapper = new LambdaQueryWrapper<>();
+            atWrapper.eq(ArticleTag::getTagId, tag.getId());
+            long count = articleTagMapper.selectCount(atWrapper);
+            tag.setArticleCount((int) count);
+        }
+        tags.sort((a, b) -> Integer.compare(b.getArticleCount(), a.getArticleCount()));
         return Result.success(tags);
     }
 

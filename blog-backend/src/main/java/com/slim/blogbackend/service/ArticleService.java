@@ -76,9 +76,14 @@ public class ArticleService {
 
         articleMapper.insert(article);
 
-        // 处理标签关联
+        // 处理标签关联并更新计数
         if (dto.getTags() != null && !dto.getTags().isEmpty()) {
             saveArticleTags(article.getId(), dto.getTags());
+        }
+
+        // 更新分类计数
+        if (dto.getCategoryId() != null) {
+            incrCategoryCount(dto.getCategoryId(), 1);
         }
 
         return Result.success(toResponseDTO(article));
@@ -90,6 +95,9 @@ public class ArticleService {
         if (article == null) {
             throw new BusinessException("文章不存在");
         }
+
+        Long oldCategoryId = article.getCategoryId();
+        List<Long> oldTagIds = getArticleTagIds(id);
 
         if (dto.getTitle() != null) article.setTitle(dto.getTitle());
         if (dto.getContent() != null) article.setContent(dto.getContent());
@@ -109,12 +117,24 @@ public class ArticleService {
 
         articleMapper.updateById(article);
 
-        // 更新标签关联
+        // 更新标签关联并同步计数
         if (dto.getTags() != null) {
+            // 先减少旧标签计数
+            if (!oldTagIds.isEmpty()) {
+                incrTagCount(oldTagIds, -1);
+            }
             articleTagMapper.deleteByArticleId(id);
             if (!dto.getTags().isEmpty()) {
                 saveArticleTags(id, dto.getTags());
             }
+        }
+
+        // 更新分类计数
+        if (dto.getCategoryId() != null && !dto.getCategoryId().equals(oldCategoryId)) {
+            if (oldCategoryId != null) {
+                incrCategoryCount(oldCategoryId, -1);
+            }
+            incrCategoryCount(dto.getCategoryId(), 1);
         }
 
         return Result.success(toResponseDTO(article));
@@ -126,7 +146,16 @@ public class ArticleService {
         if (article == null) {
             throw new BusinessException("文章不存在");
         }
-        // 先删除标签关联
+        // 减少旧标签计数
+        List<Long> oldTagIds = getArticleTagIds(id);
+        if (!oldTagIds.isEmpty()) {
+            incrTagCount(oldTagIds, -1);
+        }
+        // 减少分类计数
+        if (article.getCategoryId() != null) {
+            incrCategoryCount(article.getCategoryId(), -1);
+        }
+        // 删除标签关联
         articleTagMapper.deleteByArticleId(id);
         articleMapper.deleteById(id);
         return Result.success();
@@ -216,11 +245,11 @@ public class ArticleService {
     }
 
     /**
-     * 保存文章标签关联
+     * 保存文章标签关联并更新计数
      */
     private void saveArticleTags(Long articleId, List<String> tagNames) {
+        List<Long> addedTagIds = new ArrayList<>();
         for (String tagName : tagNames) {
-            // 查找或创建标签
             LambdaQueryWrapper<Tag> tagWrapper = new LambdaQueryWrapper<>();
             tagWrapper.eq(Tag::getName, tagName);
             Tag tag = tagMapper.selectOne(tagWrapper);
@@ -235,13 +264,59 @@ public class ArticleService {
                 tagMapper.insert(tag);
             }
 
-            // 创建关联
             ArticleTag articleTag = ArticleTag.builder()
                     .articleId(articleId)
                     .tagId(tag.getId())
                     .createdAt(LocalDateTime.now())
                     .build();
             articleTagMapper.insert(articleTag);
+
+            addedTagIds.add(tag.getId());
+        }
+        if (!addedTagIds.isEmpty()) {
+            incrTagCount(addedTagIds, 1);
+        }
+    }
+
+    /**
+     * 获取文章关联的标签ID列表
+     */
+    private List<Long> getArticleTagIds(Long articleId) {
+        LambdaQueryWrapper<ArticleTag> atWrapper = new LambdaQueryWrapper<>();
+        atWrapper.eq(ArticleTag::getArticleId, articleId);
+        List<ArticleTag> articleTags = articleTagMapper.selectList(atWrapper);
+        if (articleTags == null || articleTags.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return articleTags.stream().map(ArticleTag::getTagId).toList();
+    }
+
+    /**
+     * 批量增减标签文章计数
+     */
+    private void incrTagCount(List<Long> tagIds, int delta) {
+        LambdaQueryWrapper<Tag> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Tag::getId, tagIds);
+        List<Tag> tags = tagMapper.selectList(wrapper);
+        if (tags != null) {
+            for (Tag tag : tags) {
+                int newCount = Math.max(0, (tag.getArticleCount() == null ? 0 : tag.getArticleCount()) + delta);
+                tag.setArticleCount(newCount);
+                tagMapper.updateById(tag);
+            }
+        }
+    }
+
+    /**
+     * 增减分类文章计数
+     */
+    private void incrCategoryCount(Long categoryId, int delta) {
+        if (categoryId == null) return;
+        Category category = categoryMapper.selectById(categoryId);
+        if (category != null) {
+            int newCount = Math.max(0, (category.getArticleCount() == null ? 0 : category.getArticleCount()) + delta);
+            category.setArticleCount(newCount);
+            categoryMapper.updateById(category);
         }
     }
 
@@ -325,6 +400,15 @@ public class ArticleService {
                     .map(Tag::getName)
                     .toList();
             builder.tags(tagNames);
+
+            List<ArticleResponseDTO.TagInfo> tagInfos = tags.stream()
+                    .map(t -> ArticleResponseDTO.TagInfo.builder()
+                            .id(t.getId())
+                            .name(t.getName())
+                            .color(t.getColor())
+                            .build())
+                    .toList();
+            builder.tagInfos(tagInfos);
         }
 
         return builder.build();

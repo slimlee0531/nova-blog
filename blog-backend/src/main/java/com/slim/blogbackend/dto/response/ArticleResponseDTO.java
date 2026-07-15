@@ -15,6 +15,16 @@ import java.util.List;
 @AllArgsConstructor
 public class ArticleResponseDTO {
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TagInfo {
+        private Long id;
+        private String name;
+        private String color;
+    }
+
     private Long id;
     private String title;
     private String slug;
@@ -36,6 +46,7 @@ public class ArticleResponseDTO {
     private String categoryName;
     private String featuredImage;
     private List<String> tags;
+    private List<TagInfo> tagInfos;
     private LocalDateTime publishedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

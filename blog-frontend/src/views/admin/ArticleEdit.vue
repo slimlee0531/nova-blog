@@ -3,9 +3,10 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { categoryApi } from '@/api/category'
+import { tagApi } from '@/api/tag'
 import { ElMessage } from 'element-plus'
 import { renderMarkdown } from '@/utils/markdown'
-import type { Category, ArticleCreateParams } from '@/types'
+import type { Category, Tag, ArticleCreateParams } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,7 +23,8 @@ const form = ref<ArticleCreateParams>({
   visibility: 'PUBLIC',
   summary: '',
   metaTitle: '',
-  metaDescription: ''
+  metaDescription: '',
+  tags: []
 })
 
 // Markdown 预览
@@ -31,12 +33,24 @@ const renderedContent = computed(() => {
 })
 
 const categories = ref<Category[]>([])
+const tags = ref<Tag[]>([])
 
 const fetchCategories = async () => {
   try {
     const res = await categoryApi.getList()
     if (res.code === 200) {
       categories.value = res.data
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const fetchTags = async () => {
+  try {
+    const res = await tagApi.getList()
+    if (res.code === 200) {
+      tags.value = res.data
     }
   } catch (e) {
     console.error(e)
@@ -101,6 +115,7 @@ const handleCancel = () => {
 
 onMounted(() => {
   fetchCategories()
+  fetchTags()
   fetchArticle()
 })
 </script>
@@ -176,6 +191,25 @@ onMounted(() => {
             :key="cat.id"
             :label="cat.name"
             :value="cat.id"
+          />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item label="标签">
+        <el-select
+          v-model="form.tags"
+          placeholder="选择标签（可输入添加新标签）"
+          multiple
+          filterable
+          allow-create
+          default-first-option
+          style="width: 100%;"
+        >
+          <el-option
+            v-for="tag in tags"
+            :key="tag.id"
+            :label="tag.name"
+            :value="tag.name"
           />
         </el-select>
       </el-form-item>

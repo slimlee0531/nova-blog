@@ -1,5 +1,5 @@
 import request from './request'
-import type { Article, ArticleCreateParams, ArticleUpdateParams, PageResult, Result } from '@/types'
+import type { Article, ArticleCreateParams, ArticleUpdateParams, PageResult, Result, DashboardStats } from '@/types'
 
 export const articleApi = {
   // 前台接口
@@ -34,5 +34,9 @@ export const articleApi = {
   },
   adminDeleteArticle(id: number) {
     return request.delete(`/api/admin/article/${id}`) as Promise<Result<void>>
+  },
+
+  adminGetDashboardStats() {
+    return request.get('/api/admin/dashboard/stats') as Promise<Result<DashboardStats>>
   }
 }

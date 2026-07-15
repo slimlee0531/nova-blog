@@ -2,8 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { articleApi } from '@/api/article'
-import { commentApi } from '@/api/comment'
-import { bookmarkApi } from '@/api/bookmark'
 import { formatDate } from '@/utils/format'
 import type { Article } from '@/types'
 import {
@@ -12,7 +10,9 @@ import {
   ChatDotRound,
   Star,
   EditPen,
-  ArrowRight
+  ArrowRight,
+  Folder,
+  CollectionTag
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -21,6 +21,8 @@ const stats = ref({
   totalArticles: 0,
   publishedArticles: 0,
   draftArticles: 0,
+  totalCategories: 0,
+  totalTags: 0,
   totalViews: 0,
   totalComments: 0,
   totalBookmarks: 0
@@ -32,32 +34,15 @@ const loading = ref(false)
 const fetchStats = async () => {
   loading.value = true
   try {
-    // 获取文章统计
-    const allRes = await articleApi.adminGetArticles({ page: 1, size: 1 })
-    if (allRes.code === 200) {
-      stats.value.totalArticles = allRes.data.total
+    const statsRes = await articleApi.adminGetDashboardStats()
+    if (statsRes.code === 200) {
+      stats.value = { ...stats.value, ...statsRes.data }
     }
 
-    const publishedRes = await articleApi.adminGetArticles({ page: 1, size: 1, status: 'PUBLISHED' })
-    if (publishedRes.code === 200) {
-      stats.value.publishedArticles = publishedRes.data.total
-    }
-
-    const draftRes = await articleApi.adminGetArticles({ page: 1, size: 1, status: 'DRAFT' })
-    if (draftRes.code === 200) {
-      stats.value.draftArticles = draftRes.data.total
-    }
-
-    // 获取最近文章
     const recentRes = await articleApi.adminGetArticles({ page: 1, size: 5 })
     if (recentRes.code === 200) {
       recentArticles.value = recentRes.data.records
     }
-
-    // 获取评论统计（简化处理）
-    stats.value.totalComments = 0
-    stats.value.totalViews = 0
-    stats.value.totalBookmarks = 0
   } catch (e) {
     console.error(e)
   } finally {
@@ -69,6 +54,8 @@ const statCards = [
   { key: 'totalArticles', label: '文章总数', icon: Document, color: '#667eea' },
   { key: 'publishedArticles', label: '已发布', icon: View, color: '#10b981' },
   { key: 'draftArticles', label: '草稿', icon: EditPen, color: '#f59e0b' },
+  { key: 'totalCategories', label: '分类总数', icon: Folder, color: '#06b6d4' },
+  { key: 'totalTags', label: '标签总数', icon: CollectionTag, color: '#84cc16' },
   { key: 'totalViews', label: '总浏览', icon: View, color: '#8b5cf6' },
   { key: 'totalComments', label: '总评论', icon: ChatDotRound, color: '#ec4899' },
   { key: 'totalBookmarks', label: '总收藏', icon: Star, color: '#f97316' }
@@ -189,6 +176,12 @@ onMounted(() => {
           </div>
           <span>管理分类</span>
         </button>
+        <button class="action-card" @click="router.push('/admin/tags')">
+          <div class="action-icon" style="background: #84cc1615; color: #84cc16">
+            <el-icon :size="24"><CollectionTag /></el-icon>
+          </div>
+          <span>管理标签</span>
+        </button>
         <button class="action-card" @click="router.push('/admin/comments')">
           <div class="action-icon" style="background: #ec489915; color: #ec4899">
             <el-icon :size="24"><ChatDotRound /></el-icon>
@@ -209,7 +202,7 @@ onMounted(() => {
 /* 统计卡片 */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -442,7 +435,7 @@ onMounted(() => {
 
 .actions-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
 }
 

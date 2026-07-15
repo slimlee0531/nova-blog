@@ -155,6 +155,19 @@ onMounted(() => {
                   </div>
                   <h3 class="article-title">{{ article.title }}</h3>
                   <p class="article-excerpt">{{ article.summary || truncate(article.content, 150) }}</p>
+                  <div class="article-tags" v-if="article.tagInfos?.length || article.tags?.length">
+                    <template v-if="article.tagInfos?.length">
+                      <span
+                        v-for="tag in article.tagInfos.slice(0, 4)"
+                        :key="tag.id"
+                        class="article-tag"
+                        :style="tag.color ? { background: `${tag.color}14`, color: tag.color, borderColor: `${tag.color}36` } : {}"
+                      >#{{ tag.name }}</span>
+                    </template>
+                    <template v-else>
+                      <span v-for="tag in article.tags?.slice(0, 4)" :key="tag" class="article-tag">#{{ tag }}</span>
+                    </template>
+                  </div>
                   <div class="article-footer">
                     <div class="article-author">
                       <div class="author-avatar">{{ article.authorName?.charAt(0) || 'A' }}</div>
@@ -221,7 +234,12 @@ onMounted(() => {
             </div>
             <div class="card-body">
               <div class="tag-cloud">
-                <span v-for="tag in tags" :key="tag.id" class="tag">
+                <span
+                  v-for="tag in tags"
+                  :key="tag.id"
+                  class="tag"
+                  :style="tag.color ? { background: `${tag.color}15`, color: tag.color, borderColor: `${tag.color}40` } : {}"
+                >
                   #{{ tag.name }}
                 </span>
               </div>
@@ -499,19 +517,21 @@ onMounted(() => {
 /* ==================== Content ==================== */
 .content {
   padding: 64px 24px 80px;
-  max-width: var(--content-max);
+  max-width: 1360px;
   margin: 0 auto;
 }
 
 .content-container {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 64px;
+  grid-template-columns: 1fr 300px;
+  gap: 40px;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
 /* ==================== Section Header ==================== */
 .section-header {
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 
 .section-header h2 {
@@ -580,14 +600,14 @@ onMounted(() => {
 }
 
 .article-content {
-  padding: 28px;
+  padding: 24px 28px;
 }
 
 .article-meta {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .article-category {
@@ -629,7 +649,7 @@ onMounted(() => {
   font-size: 15px;
   color: #666;
   line-height: 1.6;
-  margin: 0 0 20px;
+  margin: 0 0 14px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -637,6 +657,32 @@ onMounted(() => {
 }
 
 [data-theme="dark"] .article-excerpt {
+  color: #999;
+}
+
+.article-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.article-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: #f5f5f5;
+  color: #666;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+}
+
+[data-theme="dark"] .article-tag {
+  background: #222;
   color: #999;
 }
 
@@ -858,7 +904,9 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 500;
   border-radius: 8px;
+  border: 1px solid transparent;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 [data-theme="dark"] .tag {
