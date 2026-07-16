@@ -169,3 +169,88 @@ export interface DashboardStats {
   totalComments: number
   totalBookmarks: number
 }
+
+// ==================== AI 写作辅助 ====================
+
+export type AiTaskType =
+  | 'SUMMARY'
+  | 'TITLE'
+  | 'TAG'
+  | 'POLISH'
+  | 'CONTINUE'
+  | 'PROOFREAD'
+  | 'REPHRASE'
+  | 'QUALITY_SCORE'
+  | 'SEO_META'
+  | 'SUGGEST_OUTLINE'
+  | 'TRANSLATE'
+
+export interface AiTaskMeta {
+  icon: string
+  label: string
+  group: '写作' | '优化' | '质量' | 'SEO'
+}
+
+export type AiSidebarTab = 'tasks' | 'result' | 'quality' | 'settings'
+
+export interface AiGenerationResult {
+  id: string
+  taskType: AiTaskType
+  status: 'idle' | 'generating' | 'done' | 'error'
+  appliedField?: keyof ArticleCreateParams | 'qualityScore'
+  inputSnapshot?: Record<string, any>
+  fullText: string
+  streamingText: string
+  tokens?: { promptTokens: number; completionTokens: number }
+  latencyMs?: number
+  errorCode?: string
+  errorMessage?: string
+  logId?: number
+  createdAt: number
+}
+
+export interface AiConfigDTO {
+  enabled: boolean
+  defaultProvider: string
+  providerName: string
+  model: string
+  apiKeyMasked: string
+  apiKeySet: boolean
+  timeoutSeconds: number
+}
+
+export interface AiTestConnectionResult {
+  ok: boolean
+  provider: string
+  model: string
+  latencyMs?: number
+  text?: string
+  tokens?: { promptTokens: number; completionTokens: number }
+  error?: string
+}
+
+export interface AiGenerateParams {
+  articleId?: number
+  taskType: AiTaskType
+  params?: Record<string, any>
+}
+
+export interface SseProgressEvent {
+  seq: number
+  text?: string
+  stage?: string
+  percent?: number
+}
+
+export interface SseDoneEvent {
+  text: string
+  tokens?: { promptTokens: number; completionTokens: number }
+  latencyMs: number
+  logId: number
+}
+
+export interface SseErrorEvent {
+  code: string
+  message: string
+  retryable: boolean
+}

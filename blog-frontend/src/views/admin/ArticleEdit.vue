@@ -6,7 +6,8 @@ import { categoryApi } from '@/api/category'
 import { tagApi } from '@/api/tag'
 import { ElMessage } from 'element-plus'
 import { renderMarkdown } from '@/utils/markdown'
-import type { Category, Tag, ArticleCreateParams } from '@/types'
+import AiSidebar from '@/components/ai/AiSidebar.vue'
+import type { Category, Tag, ArticleCreateParams, AiTaskType, AiGenerationResult } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -83,6 +84,56 @@ const fetchArticle = async () => {
   }
 }
 
+const applyAiResult = (payload: { taskType: AiTaskType; result: AiGenerationResult; fullText: string }) => {
+  const { taskType, fullText } = payload
+  switch (taskType) {
+    case 'TITLE': {
+      const line = fullText.split(/\r?\n/).find(l => l.trim().length > 0)
+      if (line) {
+        form.value.title = line.replace(/^\d+[\.、)\s]+/, '').replace(/^["'“”]+|["'“”]+$/g, '').trim()
+        ElMessage.success('已应用到标题')
+      }
+      break
+    }
+    case 'SUMMARY': {
+      form.value.summary = fullText.trim()
+      ElMessage.success('已应用到摘要')
+      break
+    }
+    case 'TAG': {
+      const extracted = fullText
+        .split(/[,，、\s|\/;；]+/)
+        .map(s => s.replace(/^[-•·\d\.\)\s]+/, '').trim())
+        .filter(s => s.length > 0)
+      if (extracted.length) {
+        form.value.tags = Array.from(new Set([...(form.value.tags ?? []), ...extracted]))
+        ElMessage.success(`已追加 ${extracted.length} 个标签`)
+      }
+      break
+    }
+    case 'SEO_META': {
+      const m = fullText.match(/Title[:：]\s*([^\n]+)/i)
+      const d = fullText.match(/Description[:：]\s*([^\n]+)/i)
+      if (m?.[1]) form.value.metaTitle = m[1].trim()
+      if (d?.[1]) form.value.metaDescription = d[1].trim()
+      ElMessage.success('已解析并应用 SEO')
+      break
+    }
+    case 'POLISH':
+    case 'REPHRASE':
+    case 'CONTINUE':
+    case 'PROOFREAD': {
+      if (confirm(`是否将生成结果追加到正文末尾？\n\n长度：${fullText.length} 字`)) {
+        form.value.content = (form.value.content || '') + (form.value.content ? '\n\n' : '') + fullText
+        ElMessage.success('已追加到正文末尾')
+      }
+      break
+    }
+    default:
+      ElMessage.info(`该任务类型（${taskType}）请自行复制粘贴应用`)
+  }
+}
+
 const handleSave = async () => {
   if (!form.value.title || !form.value.content) {
     ElMessage.warning('请填写标题和内容')
@@ -121,130 +172,154 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="article-edit" v-loading="loading">
-    <div class="edit-header">
-      <h2>{{ isEdit ? '编辑文章' : '新建文章' }}</h2>
-      <div class="edit-actions">
-        <el-button @click="handleCancel">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+  <div class="edit-layout">
+    <div class="article-edit" v-loading="loading">
+      <div class="edit-header">
+        <h2>{{ isEdit ? '编辑文章' : '新建文章' }}</h2>
+        <div class="edit-actions">
+          <el-button @click="handleCancel">取消</el-button>
+          <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+        </div>
       </div>
-    </div>
 
-    <el-form :model="form" label-width="100px">
-      <el-form-item label="标题">
-        <el-input v-model="form.title" placeholder="请输入文章标题" />
-      </el-form-item>
+      <el-form :model="form" label-width="100px">
+        <el-form-item label="标题">
+          <el-input v-model="form.title" placeholder="请输入文章标题" />
+        </el-form-item>
 
-      <el-form-item label="内容">
-        <!-- 编辑/预览切换 -->
-        <div class="editor-wrapper">
-          <div class="editor-tabs">
-            <button
-              class="tab-btn"
-              :class="{ active: activeTab === 'edit' }"
-              @click="activeTab = 'edit'"
-            >
-              ✏️ 编辑
-            </button>
-            <button
-              class="tab-btn"
-              :class="{ active: activeTab === 'preview' }"
-              @click="activeTab = 'preview'"
-            >
-              👁️ 预览
-            </button>
-          </div>
+        <el-form-item label="内容">
+          <!-- 编辑/预览切换 -->
+          <div class="editor-wrapper">
+            <div class="editor-tabs">
+              <button
+                class="tab-btn"
+                :class="{ active: activeTab === 'edit' }"
+                @click="activeTab = 'edit'"
+              >
+                ✏️ 编辑
+              </button>
+              <button
+                class="tab-btn"
+                :class="{ active: activeTab === 'preview' }"
+                @click="activeTab = 'preview'"
+              >
+                👁️ 预览
+              </button>
+            </div>
 
-          <!-- 编辑区 -->
-          <div v-show="activeTab === 'edit'">
-            <el-input
-              v-model="form.content"
-              type="textarea"
-              :rows="20"
-              placeholder="请输入文章内容（支持Markdown）"
-            />
-          </div>
+            <!-- 编辑区 -->
+            <div v-show="activeTab === 'edit'">
+              <el-input
+                v-model="form.content"
+                type="textarea"
+                :rows="20"
+                placeholder="请输入文章内容（支持Markdown）"
+              />
+            </div>
 
-          <!-- 预览区 -->
-          <div v-show="activeTab === 'preview'" class="preview-area">
-            <div v-if="form.content" class="markdown-body" v-html="renderedContent"></div>
-            <div v-else class="empty-preview">
-              <p>📝 暂无内容</p>
+            <!-- 预览区 -->
+            <div v-show="activeTab === 'preview'" class="preview-area">
+              <div v-if="form.content" class="markdown-body" v-html="renderedContent"></div>
+              <div v-else class="empty-preview">
+                <p>📝 暂无内容</p>
+              </div>
             </div>
           </div>
-        </div>
-      </el-form-item>
+        </el-form-item>
 
-      <el-form-item label="摘要">
-        <el-input
-          v-model="form.summary"
-          type="textarea"
-          :rows="3"
-          placeholder="文章摘要（可选）"
-        />
-      </el-form-item>
-
-      <el-form-item label="分类">
-        <el-select v-model="form.categoryId" placeholder="请选择分类" clearable>
-          <el-option
-            v-for="cat in categories"
-            :key="cat.id"
-            :label="cat.name"
-            :value="cat.id"
+        <el-form-item label="摘要">
+          <el-input
+            v-model="form.summary"
+            type="textarea"
+            :rows="3"
+            placeholder="文章摘要（可选）"
           />
-        </el-select>
-      </el-form-item>
+        </el-form-item>
 
-      <el-form-item label="标签">
-        <el-select
-          v-model="form.tags"
-          placeholder="选择标签（可输入添加新标签）"
-          multiple
-          filterable
-          allow-create
-          default-first-option
-          style="width: 100%;"
-        >
-          <el-option
-            v-for="tag in tags"
-            :key="tag.id"
-            :label="tag.name"
-            :value="tag.name"
+        <el-form-item label="分类">
+          <el-select v-model="form.categoryId" placeholder="请选择分类" clearable>
+            <el-option
+              v-for="cat in categories"
+              :key="cat.id"
+              :label="cat.name"
+              :value="cat.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="标签">
+          <el-select
+            v-model="form.tags"
+            placeholder="选择标签（可输入添加新标签）"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="tag in tags"
+              :key="tag.id"
+              :label="tag.name"
+              :value="tag.name"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="状态">
+          <el-select v-model="form.status">
+            <el-option label="草稿" value="DRAFT" />
+            <el-option label="发布" value="PUBLISHED" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="可见性">
+          <el-select v-model="form.visibility">
+            <el-option label="公开" value="PUBLIC" />
+            <el-option label="私密" value="PRIVATE" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="SEO标题">
+          <el-input v-model="form.metaTitle" placeholder="SEO标题（可选）" />
+        </el-form-item>
+
+        <el-form-item label="SEO描述">
+          <el-input
+            v-model="form.metaDescription"
+            type="textarea"
+            :rows="2"
+            placeholder="SEO描述（可选）"
           />
-        </el-select>
-      </el-form-item>
+        </el-form-item>
+      </el-form>
+    </div>
 
-      <el-form-item label="状态">
-        <el-select v-model="form.status">
-          <el-option label="草稿" value="DRAFT" />
-          <el-option label="发布" value="PUBLISHED" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="可见性">
-        <el-select v-model="form.visibility">
-          <el-option label="公开" value="PUBLIC" />
-          <el-option label="私密" value="PRIVATE" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="SEO标题">
-        <el-input v-model="form.metaTitle" placeholder="SEO标题（可选）" />
-      </el-form-item>
-
-      <el-form-item label="SEO描述">
-        <el-input
-          v-model="form.metaDescription"
-          type="textarea"
-          :rows="2"
-          placeholder="SEO描述（可选）"
-        />
-      </el-form-item>
-    </el-form>
+    <AiSidebar
+      :form="form"
+      :article-id="isEdit ? Number(route.params.id) : undefined"
+      @apply="applyAiResult"
+    />
   </div>
 </template>
 
 <style scoped>
+.edit-layout {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-lg) 0;
+  align-items: flex-start;
+}
+
+.article-edit {
+  flex: 1;
+  min-width: 0;
+  max-width: 1100px;
+}
+
 .edit-header {
   display: flex;
   justify-content: space-between;
