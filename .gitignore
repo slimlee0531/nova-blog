@@ -132,3 +132,4 @@ docker-compose.override.yml
 blog-backend/blog-backend.log
 blog-backend/*.log
 blog-frontend/dist/
+分工文档.md
